@@ -1,2 +1,2 @@
-# nic
-Command Line Interface for NI
+# nisp
+Next In Service Protocol Implementation
