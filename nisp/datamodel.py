@@ -1,8 +1,7 @@
-from nisp.utils import logger, insert_bit, separate_bits, remove_bit
+from nisp.utils import logger, separate_bits
 from nisp.const import *
 import uuid
 import random
-from abc import abstractmethod
 
 
 class Id(object):
@@ -105,7 +104,7 @@ class EventId(object):
         if network_interface_controller is None:
             nic = EventId.network_interface_controller()
         else:
-            nic = network_interface_controller
+            nic = BIN_REG.format(int(network_interface_controller, 2), NIC_BITS)
         self._action = Action(aid, state)
         timestamp_shadow, self._ts = EventId.timestamp_shadow(random_code, position_code_value, timestamp)
         encode = random_code + timestamp_shadow + position_code + str(self._action) + nic
@@ -143,7 +142,7 @@ class EventId(object):
         if ts is None:
             ts = moment()
         if ts.unix() < EventId._epoch:
-            raise ValueError(logger.error([1001]))
+            raise ValueError(logger.error([1208]))
         ts = (ts.unix() - EventId._epoch) * 1000 + ts.milliseconds()
         timestamp_bin = BIN_REG.format(ts, TIMESTAMP_BITS)
         length = TS_PACKAGE_LEN - 1
@@ -162,15 +161,11 @@ class EventId(object):
         return ''.join(timestamp_shadow_list), timestamp_bin
 
     @staticmethod
-    def timestamp(ts: int):
-        return EPOCH_MOMENT.add(ts + EventId._epoch - EPOCH_DEFAULT, 'ms')
-
-    @staticmethod
     def network_interface_controller():
         return BIN_REG.format(int(hex(uuid.getnode())[-6:], 16), NIC_BITS)
 
     @staticmethod
-    def unpack(event_id):
+    def unpack(event_id, ignore_nic=True):
         if isinstance(event_id, str):
             value = int(event_id, 16)
         else:
@@ -206,12 +201,15 @@ class EventId(object):
         if random_code == random_code_check:
             timestamp = EPOCH_MOMENT.add(int(ts, 2) + EventId._epoch - EPOCH_DEFAULT, 'ms')
             if timestamp >= moment():
-                raise ValueError
+                raise ValueError(logger.error([1205]))
             else:
                 nic = BIN_REG.format(nic_value, NIC_BITS)
                 nic_check = EventId.network_interface_controller()
-                if nic != nic_check:
-                    logger.warning()
+                if ignore_nic:
+                    pass
+                else:
+                    if nic != nic_check:
+                        raise ValueError(logger.error([1207, nic, nic_check]))
                 return action, timestamp, nic
         else:
-            raise ValueError
+            raise ValueError(logger.error([1206, random_code, random_code_check]))

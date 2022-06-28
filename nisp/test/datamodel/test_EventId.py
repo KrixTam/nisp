@@ -9,6 +9,11 @@ class TestEventId(unittest.TestCase):
         ts_shadow, timestamp_bin = EventId.timestamp_shadow('101100', 0, ts)
         self.assertEqual('000000010000100000000111101001111000101000100000', ts_shadow)
 
+    def test_timestamp_shadow_02(self):
+        ts = moment('2011-01-02 12:23:22')
+        with self.assertRaises(ValueError):
+            EventId.timestamp_shadow('101100', 0, ts)
+
     def test_unpack(self):
         ts = moment('2021-01-02 12:23:22')
         ts_shadow = '000000010000100000000111101001111000101000100000'
@@ -21,6 +26,82 @@ class TestEventId(unittest.TestCase):
         self.assertEqual(action_01, action_01)
         self.assertEqual(nic_01, nic_02)
         self.assertEqual(ts, timestamp)
+
+    def test_basic_01(self):
+        ts = moment('2021-01-02 12:23:22')
+        nic = EventId.network_interface_controller()
+        eid = EventId(0, 0, nic, ts)
+        action_01, timestamp_01, nic_01 = EventId.unpack(str(eid))
+        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        self.assertEqual(eid_01.core, eid.core)
+
+    def test_basic_02(self):
+        ts = moment('2021-01-02 12:23:22')
+        nic = EventId.network_interface_controller()
+        eid = EventId(0, 0, nic, ts)
+        action_01, timestamp_01, nic_01 = EventId.unpack(eid)
+        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        self.assertTrue(eid_01.equal(eid))
+
+    def test_basic_03(self):
+        ts = moment('2021-01-02 12:23:22')
+        nic = EventId.network_interface_controller()
+        eid = EventId(0, 0, nic, ts)
+        action_01, timestamp_01, nic_01 = EventId.unpack(eid)
+        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        self.assertTrue(eid_01 == str(eid_01))
+        self.assertNotEqual(eid, eid_01)
+        self.assertTrue(eid_01.equal(eid))
+
+    def test_basic_04(self):
+        ts = moment('2021-01-02 12:23:22')
+        nic = EventId.network_interface_controller()
+        eid = EventId(0, 0, nic, ts)
+        action_01, timestamp_01, nic_01 = EventId.unpack(eid)
+        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        self.assertTrue(eid_01 == eid_01._value)
+        self.assertNotEqual(eid, eid_01)
+        self.assertTrue(eid_01.equal(eid))
+
+    def test_error_01(self):
+        with self.assertRaises(TypeError):
+            EventId.unpack(['1231'])
+
+    def test_error_02(self):
+        eid = EventId()
+        with self.assertRaises(TypeError):
+            eid.__ne__([123])
+
+    def test_error_03(self):
+        eid = EventId()
+        with self.assertRaises(TypeError):
+            eid.equal([123])
+
+    def test_error_04(self):
+        with self.assertRaises(ValueError):
+            EventId.unpack('8080100e4e14c14000271efe')
+
+    def test_error_05(self):
+        # from moment import moment
+        # EventId._epoch = moment('1990-12-11').unix()
+        # print(EventId(timestamp=moment('2018-10-28')))
+        with self.assertRaises(ValueError):
+            EventId.unpack('58ca6e32b444000000271efe')
+
+    def test_error_06(self):
+        ts = moment('2021-01-02 12:23:22')
+        ts_shadow = '000000010000100000000111101001111000101000100000'
+        random_code = '101100'
+        position_code = '0000'
+        action_01 = Action(8)
+        nic_01 = EventId.network_interface_controller()
+        nic_01_01 = list(nic_01)
+        for i in range(4):
+            nic_01_01[i] = '1'
+        nic_01_02 = ''.join(nic_01_01)
+        event_id = int(random_code + ts_shadow + position_code + str(action_01) + nic_01_02, 2)
+        with self.assertRaises(ValueError):
+            EventId.unpack(event_id, False)
 
 
 if __name__ == '__main__':

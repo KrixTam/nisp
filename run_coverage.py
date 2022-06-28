@@ -27,6 +27,7 @@ for d in dirs:
 test_modules = [
     'nisp.test.utils.test_insert_bit',
     'nisp.test.utils.test_separate_bits',
+    'nisp.test.utils.test_remove_bit',
     'nisp.test.datamodel.test_ActionId',
     'nisp.test.datamodel.test_ActionState',
     'nisp.test.datamodel.test_Action',
