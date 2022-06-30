@@ -2,6 +2,7 @@ from nisp.utils import logger, separate_bits
 from nisp.const import *
 import uuid
 import random
+from abc import abstractmethod
 
 
 class Id(object):
@@ -49,17 +50,17 @@ class Id(object):
         return not self.__eq__(other)
 
 
-class ActionId(Id):
+class CommandId(Id):
 
-    def __init__(self, aid: int):
-        Id.register('ActionId', ACTION_ID_MIN, ACTION_ID_MAX, ACTION_ID_BITS)
-        super().__init__(aid)
+    def __init__(self, cid: int):
+        Id.register('CommandId', COMMAND_ID_MIN, COMMAND_ID_MAX, COMMAND_ID_BITS)
+        super().__init__(cid)
 
 
-class ActionState(Id):
+class CommandState(Id):
 
     def __init__(self, state: int = STATE_INIT):
-        Id.register('ActionState', STATE_MIN, STATE_MAX, ACTION_STATE_BITS)
+        Id.register('CommandState', STATE_MIN, STATE_MAX, COMMAND_STATE_BITS)
         super().__init__(state)
 
     def next(self):
@@ -69,14 +70,17 @@ class ActionState(Id):
             self.value = self.value + 1
 
 
-class Action(object):
+class Command(object):
 
-    def __init__(self, aid: int, state: int = STATE_INIT):
-        self.id = ActionId(aid)
-        self.state = ActionState(state)
+    def __init__(self, cid: int, state: int = STATE_INIT):
+        self.id = CommandId(cid)
+        self.state = CommandState(state)
 
     def next(self):
-        self.state.next()
+        if self.state == STATE_INIT:
+            self.init()
+        if self.state == STATE_PROCESS_APPLY:
+            self.process()
 
     def __str__(self):
         return self.state.__str__() + self.id.__str__()
@@ -85,7 +89,7 @@ class Action(object):
         return self.id.__repr__() + '\n' + self.state.__repr__()
 
     def __eq__(self, other):
-        if isinstance(other, Action):
+        if isinstance(other, Command):
             return (self.id == other.id) and (self.state == other.state)
         else:
             raise TypeError(logger.error([1202, other, type(other)]))
@@ -93,11 +97,19 @@ class Action(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @abstractmethod
+    def init(self):
+        self.state.next()
+
+    @abstractmethod
+    def process(self):
+        self.state.next()
+
 
 class EventId(object):
     _epoch = EPOCH_DEFAULT
 
-    def __init__(self, aid: int = 0, state: int = STATE_INIT, network_interface_controller: str = None, timestamp: moment = None):
+    def __init__(self, cid: int = 0, state: int = STATE_INIT, network_interface_controller: str = None, timestamp: moment = None):
         random_code = BIN_REG.format(random.randint(RANDOM_CODE_MIN, RANDOM_CODE_MAX), RANDOM_CODE_BITS)
         position_code_value = random.randint(POSITION_CODE_MIN, POSITION_CODE_MAX)
         position_code = BIN_REG.format(position_code_value, POSITION_CODE_BITS)
@@ -105,9 +117,10 @@ class EventId(object):
             nic = EventId.network_interface_controller()
         else:
             nic = BIN_REG.format(int(network_interface_controller, 2), NIC_BITS)
-        self._action = Action(aid, state)
+        self._cid = CommandId(cid)
+        self._state = CommandState(state)
         timestamp_shadow, self._ts = EventId.timestamp_shadow(random_code, position_code_value, timestamp)
-        encode = random_code + timestamp_shadow + position_code + str(self._action) + nic
+        encode = random_code + timestamp_shadow + position_code + str(self._cid) + str(self._state) + nic
         self._value = int(encode, 2)
         self._nic = nic
 
@@ -128,7 +141,7 @@ class EventId(object):
 
     @property
     def core(self):
-        return self._ts + self._action.__str__() + self._nic
+        return self._ts + str(self._cid) + str(self._state) + self._nic
 
     def equal(self, other):
         if isinstance(other, EventId):
@@ -177,9 +190,10 @@ class EventId(object):
                 else:
                     raise TypeError(logger.error([1204, event_id, type(event_id)]))
         left, nic_value = separate_bits(value, NIC_BITS)
-        left, aid = separate_bits(left, ACTION_ID_BITS)
-        left, state = separate_bits(left, ACTION_STATE_BITS)
-        action = Action(aid, state)
+        left, cid_value = separate_bits(left, COMMAND_ID_BITS)
+        left, state_value = separate_bits(left, COMMAND_STATE_BITS)
+        cid = CommandId(cid_value)
+        state = CommandState(state_value)
         left, position_code_value = separate_bits(left, POSITION_CODE_BITS)
         random_code_value, timestamp_shadow_value = separate_bits(left, TIMESTAMP_SHADOW_BITS)
         random_code = BIN_REG.format(random_code_value, RANDOM_CODE_BITS)
@@ -210,6 +224,6 @@ class EventId(object):
                 else:
                     if nic != nic_check:
                         raise ValueError(logger.error([1207, nic, nic_check]))
-                return action, timestamp, nic
+                return cid, state, timestamp, nic
         else:
             raise ValueError(logger.error([1206, random_code, random_code_check]))

@@ -50,7 +50,7 @@ ERROR_DEF = {
     '1102': '[{0}] remove_bit方法中的参数值异常。',
     '1200': '[{0}] {1}值({2})异常，合理范围应为[{3}, {4}]。',
     '1201': '[{0}] "{1}"类型为{2}，{3}比较方法只接受{3}或者<class \'int\'>。',
-    '1202': '[{0}] "{1}"类型为{2}，<class \'nisp.datamodel.Action\'>比较方法只接受<class \'nisp.datamodel.Action\'>。',
+    '1202': '[{0}] "{1}"类型为{2}，<class \'nisp.datamodel.Command\'>比较方法只接受<class \'nisp.datamodel.Command\'>。',
     '1203': '[{0}] "{1}"类型为{2}，<class \'nisp.datamodel.EventId\'>比较方法只接受<class \'nisp.datamodel.EventId\'>、<class \'int\'>或者<class \'str\'>。',
     '1204': '[{0}] EventId.unpack方法参数类型只接受<class \'nisp.datamodel.EventId\'>、<class \'int\'>或者<class \'str\'>，当前参数"{1}"类型为{2}。',
     '1205': '[{0}] EventId.unpack方法时间逆流。',

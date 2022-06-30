@@ -1,5 +1,5 @@
 import unittest
-from nisp.datamodel import EventId, Action
+from nisp.datamodel import EventId, Command
 from moment import moment
 
 
@@ -19,11 +19,12 @@ class TestEventId(unittest.TestCase):
         ts_shadow = '000000010000100000000111101001111000101000100000'
         random_code = '101100'
         position_code = '0000'
-        action_01 = Action(4)
+        command_01 = Command(4)
         nic_01 = EventId.network_interface_controller()
-        event_id = int(random_code + ts_shadow + position_code + str(action_01) + nic_01, 2)
-        action_02, timestamp, nic_02 = EventId.unpack(event_id)
-        self.assertEqual(action_01, action_01)
+        event_id = int(random_code + ts_shadow + position_code + str(command_01) + nic_01, 2)
+        cid_02, state_02, timestamp, nic_02 = EventId.unpack(event_id)
+        command_02 = Command(cid_02.value, state_02.value)
+        self.assertEqual(command_01, command_02)
         self.assertEqual(nic_01, nic_02)
         self.assertEqual(ts, timestamp)
 
@@ -31,24 +32,24 @@ class TestEventId(unittest.TestCase):
         ts = moment('2021-01-02 12:23:22')
         nic = EventId.network_interface_controller()
         eid = EventId(0, 0, nic, ts)
-        action_01, timestamp_01, nic_01 = EventId.unpack(str(eid))
-        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        cid_01, state_01, timestamp_01, nic_01 = EventId.unpack(str(eid))
+        eid_01 = EventId(cid_01.value, state_01.value, nic_01, timestamp_01)
         self.assertEqual(eid_01.core, eid.core)
 
     def test_basic_02(self):
         ts = moment('2021-01-02 12:23:22')
         nic = EventId.network_interface_controller()
         eid = EventId(0, 0, nic, ts)
-        action_01, timestamp_01, nic_01 = EventId.unpack(eid)
-        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        cid_01, state_01, timestamp_01, nic_01 = EventId.unpack(eid)
+        eid_01 = EventId(cid_01.value, state_01.value, nic_01, timestamp_01)
         self.assertTrue(eid_01.equal(eid))
 
     def test_basic_03(self):
         ts = moment('2021-01-02 12:23:22')
         nic = EventId.network_interface_controller()
         eid = EventId(0, 0, nic, ts)
-        action_01, timestamp_01, nic_01 = EventId.unpack(eid)
-        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        cid_01, state_01, timestamp_01, nic_01 = EventId.unpack(eid)
+        eid_01 = EventId(cid_01.value, state_01.value, nic_01, timestamp_01)
         self.assertTrue(eid_01 == str(eid_01))
         self.assertNotEqual(eid, eid_01)
         self.assertTrue(eid_01.equal(eid))
@@ -57,8 +58,8 @@ class TestEventId(unittest.TestCase):
         ts = moment('2021-01-02 12:23:22')
         nic = EventId.network_interface_controller()
         eid = EventId(0, 0, nic, ts)
-        action_01, timestamp_01, nic_01 = EventId.unpack(eid)
-        eid_01 = EventId(action_01.id.value, action_01.state.value, nic_01, timestamp_01)
+        cid_01, state_01, timestamp_01, nic_01 = EventId.unpack(eid)
+        eid_01 = EventId(cid_01.value, state_01.value, nic_01, timestamp_01)
         self.assertTrue(eid_01 == eid_01._value)
         self.assertNotEqual(eid, eid_01)
         self.assertTrue(eid_01.equal(eid))
@@ -93,13 +94,13 @@ class TestEventId(unittest.TestCase):
         ts_shadow = '000000010000100000000111101001111000101000100000'
         random_code = '101100'
         position_code = '0000'
-        action_01 = Action(8)
+        command_01 = Command(8)
         nic_01 = EventId.network_interface_controller()
         nic_01_01 = list(nic_01)
         for i in range(4):
             nic_01_01[i] = '1'
         nic_01_02 = ''.join(nic_01_01)
-        event_id = int(random_code + ts_shadow + position_code + str(action_01) + nic_01_02, 2)
+        event_id = int(random_code + ts_shadow + position_code + str(command_01) + nic_01_02, 2)
         with self.assertRaises(ValueError):
             EventId.unpack(event_id, False)
 

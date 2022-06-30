@@ -28,9 +28,9 @@ test_modules = [
     'nisp.test.utils.test_insert_bit',
     'nisp.test.utils.test_separate_bits',
     'nisp.test.utils.test_remove_bit',
-    'nisp.test.datamodel.test_ActionId',
-    'nisp.test.datamodel.test_ActionState',
-    'nisp.test.datamodel.test_Action',
+    'nisp.test.datamodel.test_CommandId',
+    'nisp.test.datamodel.test_CommandState',
+    'nisp.test.datamodel.test_Command',
     'nisp.test.datamodel.test_EventId',
 ]
 
