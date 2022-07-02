@@ -49,7 +49,13 @@ EVENT_ID = {
     'pattern': '^[a-f0-9]{24}'
 }
 
-PV_MESSAGE = ParameterValidator({
+PV_REQUEST = ParameterValidator({
     KEY_EVENT_ID: EVENT_ID,
     KEY_DATA: {'type': 'object'}
+})
+
+PV_RESPONSE = ParameterValidator({
+    KEY_EVENT_ID: EVENT_ID,
+    KEY_DATA: {'type': 'object'},
+    KEY_ERROR_CODE: {'type': 'integer'}
 })

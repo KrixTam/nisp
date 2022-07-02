@@ -60,7 +60,7 @@ class TestEventId(unittest.TestCase):
         eid = EventId(0, 0, nic, ts)
         cid_01, state_01, timestamp_01, nic_01 = EventId.unpack(eid)
         eid_01 = EventId(cid_01.value, state_01.value, nic_01, timestamp_01)
-        self.assertTrue(eid_01 == eid_01._value)
+        self.assertTrue(eid_01 == eid_01.value)
         self.assertNotEqual(eid, eid_01)
         self.assertTrue(eid_01.equal(eid))
 
@@ -103,6 +103,18 @@ class TestEventId(unittest.TestCase):
         event_id = int(random_code + ts_shadow + position_code + str(command_01) + nic_01_02, 2)
         with self.assertRaises(ValueError):
             EventId.unpack(event_id, False)
+
+    def test_next(self):
+        eid = EventId()
+        a = eid.core
+        a_37 = a[-37]
+        eid.next()
+        b = eid.core
+        b_37 = b[-37]
+        self.assertEqual(a[:-37], b[:-37])
+        self.assertEqual(a[-36:], b[-36:])
+        self.assertEqual(a_37, '0')
+        self.assertEqual(b_37, '1')
 
 
 if __name__ == '__main__':

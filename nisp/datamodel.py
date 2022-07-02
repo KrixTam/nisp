@@ -3,6 +3,7 @@ from nisp.const import *
 import uuid
 import random
 from abc import abstractmethod
+from string import Template
 
 
 class Id(object):
@@ -71,16 +72,18 @@ class CommandState(Id):
 
 
 class Command(object):
+    _registration = {}
 
     def __init__(self, cid: int, state: int = STATE_INIT):
         self.id = CommandId(cid)
         self.state = CommandState(state)
 
-    def next(self):
+    def next(self, **kwargs):
         if self.state == STATE_INIT:
-            self.init()
+            return self.init(**kwargs)
         if self.state == STATE_PROCESS_APPLY:
-            self.process()
+            return self.process(**kwargs)
+        return None, 0
 
     def __str__(self):
         return self.state.__str__() + self.id.__str__()
@@ -97,13 +100,32 @@ class Command(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    @abstractmethod
-    def init(self):
-        self.state.next()
+    @staticmethod
+    def get_command(cid: int, state: int = STATE_INIT):
+        command_id = str(CommandId(cid))
+        if command_id in Command._registration:
+            return Command._registration[command_id](state)
+        else:
+            return Command(cid, state)
+
+    @staticmethod
+    def register(cid: int, command_class):
+        command_id = str(CommandId(cid))
+        if command_id in Command._registration:
+            return False
+        else:
+            Command._registration[command_id] = command_class
+            return True
 
     @abstractmethod
-    def process(self):
+    def init(self, **kwargs):
         self.state.next()
+        return None, 0
+
+    @abstractmethod
+    def process(self, **kwargs):
+        self.state.next()
+        return None, 0
 
 
 class EventId(object):
@@ -117,15 +139,20 @@ class EventId(object):
             nic = EventId.network_interface_controller()
         else:
             nic = BIN_REG.format(int(network_interface_controller, 2), NIC_BITS)
-        self._cid = CommandId(cid)
-        self._state = CommandState(state)
+        self._command = Command.get_command(cid, state)
         timestamp_shadow, self._ts = EventId.timestamp_shadow(random_code, position_code_value, timestamp)
-        encode = random_code + timestamp_shadow + position_code + str(self._cid) + str(self._state) + nic
-        self._value = int(encode, 2)
+        self._random_code = random_code
+        self._timestamp_shadow = timestamp_shadow
+        self._position_code = position_code
         self._nic = nic
 
+    @property
+    def value(self):
+        encode = self._random_code + self._timestamp_shadow + self._position_code + str(self._command) + self._nic
+        return int(encode, 2)
+
     def __str__(self):
-        return HEX_REG.format(self._value, EVENT_ID_LEN)
+        return HEX_REG.format(self.value, EVENT_ID_LEN)
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -133,7 +160,7 @@ class EventId(object):
         if isinstance(other, EventId):
             return str(self) == str(other)
         if isinstance(other, int):
-            return self._value == other
+            return self.value == other
         raise TypeError(logger.error([1203, other, type(other)]))
 
     def __ne__(self, other):
@@ -141,7 +168,7 @@ class EventId(object):
 
     @property
     def core(self):
-        return self._ts + str(self._cid) + str(self._state) + self._nic
+        return self._ts + str(self._command) + self._nic
 
     def equal(self, other):
         if isinstance(other, EventId):
@@ -227,3 +254,25 @@ class EventId(object):
                 return cid, state, timestamp, nic
         else:
             raise ValueError(logger.error([1206, random_code, random_code_check]))
+
+    def next(self, **kwargs):
+        return self._command.next(**kwargs)
+
+
+class Event(object):
+    template = Template('{ "eid": "${eid}", "ec": ${ec}, "data": ${data} }')
+
+    def __init__(self, eid: str):
+        cid, state, timestamp, nic = EventId.unpack(eid)
+        self._eid = EventId(cid.value, state.value, nic, timestamp)
+
+    def process(self, data: dict):
+        response_data, error_code = self._eid.next(**data)
+        if response_data is None:
+            return None
+        else:
+            return self.generate_response(response_data, error_code)
+
+    def generate_response(self, data_value: dict, error_code: int = 0):
+        data = Event.template.substitute(eid=str(self._eid), ec=error_code, data=data_value).encode('utf-8')
+        return data
