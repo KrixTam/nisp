@@ -69,12 +69,12 @@ class TestEventId(unittest.TestCase):
             EventId.unpack(['1231'])
 
     def test_error_02(self):
-        eid = EventId()
+        eid = EventId(cid=1)
         with self.assertRaises(TypeError):
             eid.__ne__([123])
 
     def test_error_03(self):
-        eid = EventId()
+        eid = EventId(cid=1)
         with self.assertRaises(TypeError):
             eid.equal([123])
 
@@ -105,7 +105,7 @@ class TestEventId(unittest.TestCase):
             EventId.unpack(event_id, False)
 
     def test_next(self):
-        eid = EventId()
+        eid = EventId(cid=12)
         a = eid.core
         a_37 = a[-37]
         eid.next()

@@ -260,13 +260,14 @@ class EventId(object):
 
 
 class Event(object):
-    template = Template('{ "eid": "${eid}", "ec": ${ec}, "data": ${data} }')
+    template = Template('{ "' + KEY_EVENT_ID + '": "${eid}", "' + KEY_ERROR_CODE + '": ${ec}, "' + KEY_DATA + '": ${data} }')
 
     def __init__(self, eid: str):
         cid, state, timestamp, nic = EventId.unpack(eid)
         self._eid = EventId(cid.value, state.value, nic, timestamp)
 
     def process(self, data: dict):
+        # ToDo: Timeout处理
         response_data, error_code = self._eid.next(**data)
         if response_data is None:
             return None

@@ -30,6 +30,16 @@ STATE_INIT_END = 1
 STATE_PROCESS_APPLY = 2
 STATE_PROCESS_END = STATE_MAX
 
+SERVER_INIT = 0
+SERVER_RUNNING = 1
+SERVER_STOP = 2
+
+HEARTBEAT_ID = 0
+
+TIMEOUT_MIN = 1
+TIMEOUT_DEFAULT = 2
+TIMEOUT_MAX = 5
+
 KEY_MAX = 'max'
 KEY_MIN = 'min'
 KEY_LEN = 'len'
@@ -43,6 +53,7 @@ TS_PACKAGE_LEN = 8
 KEY_EVENT_ID = 'eid'
 KEY_DATA = 'data'
 KEY_ERROR_CODE = 'ec'
+KEY_NAME = 'name'
 
 EVENT_ID = {
     'type': 'string',
@@ -58,4 +69,11 @@ PV_RESPONSE = ParameterValidator({
     KEY_EVENT_ID: EVENT_ID,
     KEY_DATA: {'type': 'object'},
     KEY_ERROR_CODE: {'type': 'integer'}
+})
+
+PV_HEARTBEAT = ParameterValidator({
+    KEY_NAME: {
+        'type': 'string',
+        'pattern': '^[a-f0-9]{4}'
+    }
 })

@@ -33,6 +33,7 @@ test_modules = [
     'nisp.test.datamodel.test_Command',
     'nisp.test.datamodel.test_EventId',
     'nisp.test.datamodel.test_Event',
+    'nisp.test.server.test_Server',
 ]
 
 # 执行测试用例
