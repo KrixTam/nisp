@@ -1,0 +1,14 @@
+{
+  "name": "NISP",
+  "description": "NISP Client",
+  "version": "0.0.11",
+  "dependencies": {
+    "moment": "^2.29.4",
+    "winston": "^3.8.1"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --collectCoverage"
+  },
+  "main": "index.js"
+}
