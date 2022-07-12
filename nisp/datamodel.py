@@ -1,6 +1,5 @@
 from nisp.utils import logger, separate_bits
 from nisp.const import *
-import uuid
 import random
 from abc import abstractmethod
 from string import Template
@@ -131,24 +130,19 @@ class Command(object):
 class EventId(object):
     _epoch = EPOCH_DEFAULT
 
-    def __init__(self, cid: int = 0, state: int = STATE_INIT, network_interface_controller: str = None, timestamp: moment = None):
+    def __init__(self, cid: int = 0, state: int = STATE_INIT, timestamp: moment = None):
         random_code = BIN_REG.format(random.randint(RANDOM_CODE_MIN, RANDOM_CODE_MAX), RANDOM_CODE_BITS)
         position_code_value = random.randint(POSITION_CODE_MIN, POSITION_CODE_MAX)
         position_code = BIN_REG.format(position_code_value, POSITION_CODE_BITS)
-        if network_interface_controller is None:
-            nic = EventId.network_interface_controller()
-        else:
-            nic = BIN_REG.format(int(network_interface_controller, 2), NIC_BITS)
         self._command = Command.get_command(cid, state)
         timestamp_shadow, self._ts = EventId.timestamp_shadow(random_code, position_code_value, timestamp)
         self._random_code = random_code
         self._timestamp_shadow = timestamp_shadow
         self._position_code = position_code
-        self._nic = nic
 
     @property
     def value(self):
-        encode = self._random_code + self._timestamp_shadow + self._position_code + str(self._command) + self._nic
+        encode = self._random_code + self._timestamp_shadow + self._position_code + str(self._command)
         return int(encode, 2)
 
     def __str__(self):
@@ -168,7 +162,7 @@ class EventId(object):
 
     @property
     def core(self):
-        return self._ts + str(self._command) + self._nic
+        return self._ts + str(self._command)
 
     def equal(self, other):
         if isinstance(other, EventId):
@@ -201,11 +195,7 @@ class EventId(object):
         return ''.join(timestamp_shadow_list), timestamp_bin
 
     @staticmethod
-    def network_interface_controller():
-        return BIN_REG.format(int(hex(uuid.getnode())[-6:], 16), NIC_BITS)
-
-    @staticmethod
-    def unpack(event_id, ignore_nic=True):
+    def unpack(event_id):
         if isinstance(event_id, str):
             value = int(event_id, 16)
         else:
@@ -216,8 +206,7 @@ class EventId(object):
                     value = int(str(event_id), 16)
                 else:
                     raise TypeError(logger.error([1204, event_id, type(event_id)]))
-        left, nic_value = separate_bits(value, NIC_BITS)
-        left, cid_value = separate_bits(left, COMMAND_ID_BITS)
+        left, cid_value = separate_bits(value, COMMAND_ID_BITS)
         left, state_value = separate_bits(left, COMMAND_STATE_BITS)
         cid = CommandId(cid_value)
         state = CommandState(state_value)
@@ -243,15 +232,7 @@ class EventId(object):
             timestamp = EPOCH_MOMENT.add(int(ts, 2) + EventId._epoch - EPOCH_DEFAULT, 'ms')
             if timestamp >= moment():
                 raise ValueError(logger.error([1205]))
-            else:
-                nic = BIN_REG.format(nic_value, NIC_BITS)
-                nic_check = EventId.network_interface_controller()
-                if ignore_nic:
-                    pass
-                else:
-                    if nic != nic_check:
-                        raise ValueError(logger.error([1207, nic, nic_check]))
-                return cid, state, timestamp, nic
+            return cid, state, timestamp
         else:
             raise ValueError(logger.error([1206, random_code, random_code_check]))
 
@@ -263,8 +244,8 @@ class Event(object):
     template = Template('{ "' + KEY_EVENT_ID + '": "${eid}", "' + KEY_ERROR_CODE + '": ${ec}, "' + KEY_DATA + '": ${data} }')
 
     def __init__(self, eid: str):
-        cid, state, timestamp, nic = EventId.unpack(eid)
-        self._eid = EventId(cid.value, state.value, nic, timestamp)
+        cid, state, timestamp = EventId.unpack(eid)
+        self._eid = EventId(cid.value, state.value, timestamp)
 
     def process(self, data: dict):
         # ToDo: Timeout处理

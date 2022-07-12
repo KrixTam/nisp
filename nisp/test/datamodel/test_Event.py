@@ -30,9 +30,9 @@ class TestEvent(unittest.TestCase):
         a = e.process({})
         b = eid.core
         received_data = yaml.safe_load(a)
-        cid, state, timestamp, nic = EventId.unpack(received_data['eid'])
+        cid, state, timestamp = EventId.unpack(received_data['eid'])
         eid.next()
-        eid_02 = EventId(cid.value, state.value, nic, timestamp)
+        eid_02 = EventId(cid.value, state.value, timestamp)
         self.assertEqual(eid_02.core, eid.core)
         self.assertNotEqual(eid_02.core, b)
         self.assertEqual({'C01': 123}, received_data['data'])

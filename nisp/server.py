@@ -1,11 +1,10 @@
 import yaml
 from ni.config import Config
-import sys
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet import reactor
 from nisp.utils import logger
 from nisp.const import *
-from nisp.datamodel import EventId, Command, CommandId, CommandState, Event
+from nisp.datamodel import Command, Event
 import random
 from string import Template
 
@@ -53,7 +52,6 @@ class NISProtocol(Protocol):
         # print(received_data)
         # print(self._name)
         if PV_REQUEST.validates(received_data, True):
-            # TODO：是否检查nic，可以作为一个配置项
             event = Event(received_data[KEY_EVENT_ID])
             response_data = event.process(received_data[KEY_DATA])
             if response_data is None:

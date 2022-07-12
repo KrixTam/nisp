@@ -8,11 +8,10 @@ EPOCH_MOMENT = moment('2020-12-21')
 COMMAND_ID_BITS = 12
 COMMAND_STATE_BITS = 2
 RANDOM_CODE_BITS = 6
-NIC_BITS = 24
 POSITION_CODE_BITS = 4
 TIMESTAMP_BITS = 42
 TIMESTAMP_SHADOW_BITS = 48
-EVENT_ID_BITS = 96
+EVENT_ID_BITS = 72
 
 POSITION_CODE_MIN = 0
 POSITION_CODE_MAX = 7
@@ -47,7 +46,7 @@ KEY_LEN = 'len'
 BIN_REG = '{0:0{1}b}'
 HEX_REG = '{0:0{1}x}'
 
-EVENT_ID_LEN = 24
+EVENT_ID_LEN = 18
 TS_PACKAGE_LEN = 8
 
 KEY_EVENT_ID = 'eid'
@@ -57,7 +56,7 @@ KEY_NAME = 'name'
 
 EVENT_ID = {
     'type': 'string',
-    'pattern': '^[a-f0-9]{24}'
+    'pattern': '^[a-f0-9]{18}'
 }
 
 PV_REQUEST = ParameterValidator({
