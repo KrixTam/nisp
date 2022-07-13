@@ -1,5 +1,4 @@
 from ni.config.tools import Logger
-from nisp.const import BIN_REG
 
 
 def insert_bit(num: int, bit_position: int, bit: bool = False):
