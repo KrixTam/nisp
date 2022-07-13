@@ -10,7 +10,7 @@ const settings = {
 
 const unpack = function(event_id) {
 	let eid_bin = hex_to_bin(event_id);
-	console.log(eid_bin);
+	// console.log(eid_bin);
 	let left, cid, state, position_code, position_code_value, right, package_bits;
 	[left, cid] = separate_bits(eid_bin, constants.COMMAND_ID_BITS);
 	[left, state] = separate_bits(left, constants.COMMAND_STATE_BITS);
@@ -35,9 +35,9 @@ const unpack = function(event_id) {
 	random_code_check_list.reverse();
 	let random_code_check = random_code_check_list.join('');
 	let ts = timestamp_list.join('');
-	console.log(ts);
-	console.log(cid);
-	console.log(state);
+	// console.log(ts);
+	// console.log(cid);
+	// console.log(state);
 	if (random_code == random_code_check) {
 		let timestamp = constants.EPOCH_MOMENT.add(parseInt(ts, 2) + settings.epoch - constants.EPOCH_DEFAULT, 'ms');
 		if (timestamp >= moment()) {

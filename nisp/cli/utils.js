@@ -4,8 +4,11 @@ const constants = require('./constants');
 String.prototype.format = function (messages) {
 	return this.replace(/\{(\w*)\}/g, function(match, key) { 
 		let message = messages[parseInt(key)];
-		// console.log(match);
-		return message !== 'undefined' ? message : match;
+		if (message == undefined) {
+			return 'undefined';
+		} else {
+			return message;
+		}
 	}.bind(this));
 };
 

@@ -12,7 +12,7 @@ module.exports = Object.freeze({
     EPOCH_DEFAULT: 1608480000,
     ERROR_DEF: {
 		'1000': '[{0}] 连接建立。',
-	    '1001': '[{0}] 非法id<{1}>，时间逆流，unpack失败。',
+	    '1001': '[{0}] unpack_event_id方法遇到非法id<{1}>，时间逆流，unpack失败。',
 	    '1002': '[{0}] unpack_event_id方法random_code校验失败({1} ≠ {2})。',
 	    '1100': '[{0}] separate_bits方法中的参数值异常。',
 	}

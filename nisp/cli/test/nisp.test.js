@@ -23,4 +23,18 @@ describe('测试unpack_event_id', () => {
         expect(timestamp.format('YYYYMMDD HHmmss.SSS')).toBe(ts.format('YYYYMMDD HHmmss.SSS'));
 	});
 
+    test('时间逆流', () => {
+        const t = () => {
+            nisp.unpack_event_id('58ca6e32b444000000');
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('random_code校验失败', () => {
+        const t = () => {
+            nisp.unpack_event_id('8080100e4e14c14000');
+        };
+        expect(t).toThrow(RangeError);
+    });
+
 });

@@ -10,6 +10,10 @@ describe('测试String.format', () => {
 		expect('[{0}] {1}值({2})异常，合理范围应为[{3}, {4}]。'.format([5001, 'bcd'])).toBe('[5001] bcd值(undefined)异常，合理范围应为[undefined, undefined]。');
 	});
 
+	test('其他匹配错误的情况', () => {
+		expect('[{}] test'.format([123])).toBe('[undefined] test');
+	});
+
 });
 
 describe('测试logger', () => {
