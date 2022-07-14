@@ -38,3 +38,70 @@ describe('测试unpack_event_id', () => {
     });
 
 });
+
+describe('测试Command', () => {
+
+    test('正常情况_01', () => {
+        let c = new nisp.Command(0);
+        expect(c.cid).toBe('000000000000');
+        expect(c.state).toBe('00');
+    });
+
+    test('正常情况_02', () => {
+        let c = new nisp.Command(4, 1);
+        expect(c.cid).toBe('000000000100');
+        expect(c.state).toBe('01');
+    });
+
+    test('正常情况_03', () => {
+        let c1 = new nisp.Command('100', '11');
+        let c2 = new nisp.Command(4, 3);
+        expect(c1.cid).toBe(c2.cid);
+        expect(c1.state).toBe(c2.state);
+    });
+
+    test('error_01', () => {
+        const t = () => {
+            new nisp.Command(4, 4);
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('error_02', () => {
+        const t = () => {
+            new nisp.Command(4096, 4);
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('error_03', () => {
+        const t = () => {
+            new nisp.Command(-1);
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('error_04', () => {
+        const t = () => {
+            new nisp.Command(0, -1);
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('next_01', () => {
+        let c = new nisp.Command(0);
+        expect(c.state).toBe('00');
+        c.next();
+        expect(c.state).toBe('01');
+        c.next();
+        expect(c.state).toBe('10');
+    });
+
+    test('next_02', () => {
+        let c = new nisp.Command(0, 3);
+        expect(c.state).toBe('11');
+        c.next();
+        expect(c.state).toBe('11');
+    });
+
+});

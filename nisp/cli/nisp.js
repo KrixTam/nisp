@@ -8,14 +8,13 @@ const settings = {
 	epoch: constants.EPOCH_DEFAULT
 };
 
+var Commands = {};
+
 const unpack = function(event_id) {
 	let eid_bin = hex_to_bin(event_id);
-	// console.log(eid_bin);
 	let left, cid, state, position_code, position_code_value, right, package_bits;
 	[left, cid] = separate_bits(eid_bin, constants.COMMAND_ID_BITS);
 	[left, state] = separate_bits(left, constants.COMMAND_STATE_BITS);
-	// cid = CommandId(cid_value)
-	// state = CommandState(state_value)
 	[left, position_code] = separate_bits(left, constants.POSITION_CODE_BITS);
 	position_code_value = parseInt(position_code, 2);
 	let [random_code_value, timestamp_shadow_value] = separate_bits(left, constants.TIMESTAMP_SHADOW_BITS);
@@ -35,9 +34,6 @@ const unpack = function(event_id) {
 	random_code_check_list.reverse();
 	let random_code_check = random_code_check_list.join('');
 	let ts = timestamp_list.join('');
-	// console.log(ts);
-	// console.log(cid);
-	// console.log(state);
 	if (random_code == random_code_check) {
 		let timestamp = constants.EPOCH_MOMENT.add(parseInt(ts, 2) + settings.epoch - constants.EPOCH_DEFAULT, 'ms');
 		if (timestamp >= moment()) {
@@ -49,8 +45,28 @@ const unpack = function(event_id) {
 	}
 };
 
+var Command = function (cid, state = 0) {
+	let cid_value = (typeof(cid) == 'number') ? cid : parseInt(cid, 2);
+	let state_value = (typeof(state) == 'number') ? state : parseInt(state, 2);
+	if ((cid_value > constants.COMMAND_ID_MAX) || (cid_value < constants.COMMAND_ID_MIN) || (state_value > constants.STATE_MAX) || (state_value < constants.STATE_MIN)) {
+		throw new RangeError(logger.error([1003, cid_value, state_value]));
+	} else {
+		this.cid = digit_format(cid_value, constants.COMMAND_ID_BITS);
+		this.state = digit_format(state_value, constants.COMMAND_STATE_BITS);
+	}
+};
+
+Command.prototype.next = function () {
+	let state_value = parseInt(this.state, 2);
+	if (state_value < constants.STATE_MAX) {
+		state_value = state_value + 1;
+		this.state = digit_format(state_value, constants.COMMAND_STATE_BITS);
+	}
+};
+
 const nisp = {
 	unpack_event_id: unpack,
+	Command: Command,
 };
 
 module.exports = nisp;
