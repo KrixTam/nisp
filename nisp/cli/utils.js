@@ -1,3 +1,5 @@
+'use strict';
+
 const winston = require('winston');
 const constants = require('./constants');
 
@@ -72,8 +74,8 @@ const utils = {
 	separate_bits: function (num, bits_length) {
 		if (typeof(num) == 'number') {
 			if ((num >= 0) && (bits_length > 0)) {
-				right = num & ((1 << bits_length) - 1);
-				left = num >> bits_length;
+				var right = num & ((1 << bits_length) - 1);
+				var left = num >> bits_length;
 				return [left, right];
 			} else {
 				throw new RangeError(_logger.error([1100]));
