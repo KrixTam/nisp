@@ -39,7 +39,7 @@ const unpack = function(event_id) {
 	if (random_code == random_code_check) {
 		let timestamp = new moment(constants.EPOCH_MOMENT).add(parseInt(ts, 2) + settings.epoch - constants.EPOCH_DEFAULT, 'ms');
 		let now = new moment();
-		if (timestamp >= now) {
+		if (timestamp > now) {
 			throw new RangeError(logger.error([1001, event_id]));
 		}
 		return [cid, state, timestamp];
@@ -50,14 +50,14 @@ const unpack = function(event_id) {
 
 var COMMAND_PROCESSORS = {};
 
-var Command = function (cid, init_callback, process_callback, state = 0) {
+var Command = function (cid, init_callback, process_callback, state = constants.STATE_INIT_PRE) {
 	let cid_value = (typeof(cid) == 'number') ? cid : parseInt(cid, 2);
 	let state_value = (typeof(state) == 'number') ? state : parseInt(state, 2);
 	if ((cid_value > constants.COMMAND_ID_MAX) || (cid_value < constants.COMMAND_ID_MIN) || (state_value > constants.STATE_MAX) || (state_value < constants.STATE_MIN)) {
 		throw new RangeError(logger.error([1003, cid_value, state_value]));
 	} else {
 		this.cid = digit_format(cid_value, constants.COMMAND_ID_BITS);
-		this.state = digit_format(state_value, constants.COMMAND_STATE_BITS);
+		this.state = state_value;
 	}
 	if (this.cid in COMMAND_PROCESSORS) {
 		this.init_cb = COMMAND_PROCESSORS[this.cid][0];
@@ -73,31 +73,36 @@ var Command = function (cid, init_callback, process_callback, state = 0) {
 	}
 };
 
+Command.prototype.to_bin = function () {
+	let state = digit_format(this.state, constants.COMMAND_STATE_BITS);
+	return state + this.cid;
+}
+
 Command.prototype.register_command = function (cid, init_callback, process_callback) {
 	if (cid in COMMAND_PROCESSORS) {
 		logger.warn([1006, cid]);
+		return false;
 	} else {
 		COMMAND_PROCESSORS[cid] = [init_callback, process_callback];
+		return true;
 	}
 };
 
 Command.prototype.next = function (data) {
-	let state_value = parseInt(this.state, 2);
 	let result = null;
-	if (state_value < constants.STATE_MAX) {
-		if (state_value == constants.STATE_INIT) {
+	if (this.state < constants.STATE_MAX) {
+		if (this.state == constants.STATE_INIT_PRE) {
 			result = this.init_cb(data);
 		}
-		if (state_value == constants.STATE_PROCESS_APPLY) {
+		if (this.state == constants.STATE_INIT_END) {
 			result = this.process_cb(data);
 		}
-		state_value = state_value + 1;
-		this.state = digit_format(state_value, constants.COMMAND_STATE_BITS);
+		this.state = this.state + 1;
 	}
 	return result;
 };
 
-var Event = function (cid, state = 0, ts = null) {
+var Event = function (cid, state = constants.STATE_INIT_PRE, ts = null) {
 	this.command = new Command(cid, null, null, state);
 	this.ts = ts;
 	if (ts == null) {
@@ -128,20 +133,28 @@ var Event = function (cid, state = 0, ts = null) {
 };
 
 Event.prototype.eid = function () {
-	let eid_bin = this.random_code + this.timestamp_shadow + this.position_code + this.command.state + this.command.cid;
+	let eid_bin = this.random_code + this.timestamp_shadow + this.position_code + this.command.to_bin();
 	return bin_to_hex(eid_bin);
 };
 
-Event.prototype.process = function () {
-	let that = this;
-	// let data = Commands[this.command.cid](that);
-	// let 
-	if (this.command.state == constants.STATE_INIT_END) {
-		;
+Event.prototype.process = function (data) {
+	if (data.constructor == Object) {
+		let result = this.command.next(data)
+		if (result == null) {
+			return null;
+		} else {
+			let request_content = {
+				eid: this.eid(),
+				ec: result['ec'],
+				data: result['data']
+			};
+			return JSON.stringify(request_content);
+		}
+	} else {
+		logger.warn([1007, data]);
+		return null;
 	}
-	if (this.command.state == constants.STATE_PROCESS_END) {
-		;
-	}
+	
 };
 
 const nisp = {

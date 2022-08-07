@@ -20,11 +20,13 @@ var data = {
 	POSITION_CODE_MAX: 7,
 	RANDOM_CODE_MIN: 0,
 	COMMAND_ID_MIN: 0,
-	STATE_MIN: 0,
+	STATE_MIN: -1,
 	STATE_MAX: 3,
-	STATE_INIT_END: '01',
-	STATE_PROCESS_END: '11',
+	STATE_INIT_PRE: -1,
+	STATE_INIT: 0,
+	STATE_INIT_END: 1,
 	STATE_PROCESS_APPLY: 2,
+	STATE_PROCESS_END: 3,
     KEY_EVENT_ID: 'eid',
 	KEY_DATA: 'data',
 	KEY_ERROR_CODE: 'ec',
@@ -37,11 +39,11 @@ var data = {
 	    '1004': '[{0}] Event创建时遇到非法时间<{1}>，导致时间逆流现象，获取id失败。',
 	    '1005': '[{0}] Command<{1}>未注册，处理回调方法不能为null，注册并创建Command失败。',
 	    '1006': '[{0}] Command<{1}>已注册，不能重复注册。',
+	    '1007': '[{0}] Event.process的参数data<{1}>非dictionary，类型错误。',
 	    '1100': '[{0}] separate_bits方法中的参数值异常。',
 	}
 };
 
-data.STATE_INIT = data.STATE_MIN;
 data.RANDOM_CODE_MAX = (1 << data.RANDOM_CODE_BITS) - 1;
 data.COMMAND_ID_MAX = (1 << data.COMMAND_ID_BITS) - 1;
 data.REQUEST = '{ "' + data.KEY_EVENT_ID + '": "{eid}", "' + data.KEY_ERROR_CODE + '": {ec}, "' + data.KEY_DATA + '": {data} }';

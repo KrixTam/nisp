@@ -230,7 +230,7 @@ class EventId(object):
         ts = ''.join(timestamp_list)
         if random_code == random_code_check:
             timestamp = EPOCH_MOMENT.add(int(ts, 2) + EventId._epoch - EPOCH_DEFAULT, 'ms')
-            if timestamp >= moment():
+            if timestamp > moment():
                 raise ValueError(logger.error([1205]))
             return cid, state, timestamp
         else:
