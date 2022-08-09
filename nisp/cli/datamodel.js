@@ -48,7 +48,27 @@ const unpack = function(event_id) {
 	}
 };
 
+
+const is_function = function (function_to_check) {
+	return function_to_check && {}.toString.call(function_to_check) === '[object Function]';
+};
+
 var COMMAND_PROCESSORS = {};
+
+const register_command = function (cid, init_callback, process_callback) {
+	if (cid in COMMAND_PROCESSORS) {
+		logger.warn([1006, cid]);
+		return false;
+	} else {
+		if (is_function(init_callback) && is_function(process_callback)) {
+			COMMAND_PROCESSORS[cid] = [init_callback, process_callback];
+			return true;
+		} else {
+			logger.warn([1008]);
+			return false;
+		}
+	}
+};
 
 var Command = function (cid, init_callback, process_callback, state = constants.STATE_INIT_PRE) {
 	let cid_value = (typeof(cid) == 'number') ? cid : parseInt(cid, 2);
@@ -66,7 +86,7 @@ var Command = function (cid, init_callback, process_callback, state = constants.
 		if ((init_callback == null) || (process_callback == null)) {
 			throw new Error(logger.error([1005, this.cid]));
 		} else {
-			this.register_command(this.cid, init_callback, process_callback);
+			register_command(this.cid, init_callback, process_callback);
 			this.init_cb = init_callback;
 			this.process_cb = process_callback;
 		}
@@ -77,16 +97,6 @@ Command.prototype.to_bin = function () {
 	let state = digit_format(this.state, constants.COMMAND_STATE_BITS);
 	return state + this.cid;
 }
-
-Command.prototype.register_command = function (cid, init_callback, process_callback) {
-	if (cid in COMMAND_PROCESSORS) {
-		logger.warn([1006, cid]);
-		return false;
-	} else {
-		COMMAND_PROCESSORS[cid] = [init_callback, process_callback];
-		return true;
-	}
-};
 
 Command.prototype.next = function (data) {
 	let result = null;
@@ -143,11 +153,9 @@ Event.prototype.process = function (data) {
 		if (result == null) {
 			return null;
 		} else {
-			let request_content = {
-				eid: this.eid(),
-				ec: result['ec'],
-				data: result['data']
-			};
+			let request_content = {};
+			request_content[constants.KEY_EVENT_ID] = this.eid();
+			request_content[constants.KEY_DATA] = result;
 			return JSON.stringify(request_content);
 		}
 	} else {
@@ -157,10 +165,12 @@ Event.prototype.process = function (data) {
 	
 };
 
-const nisp = {
+const datamodel = {
 	unpack_event_id: unpack,
 	Command: Command,
 	Event: Event,
+	register_command: register_command,
+	is_function: is_function,
 };
 
-module.exports = nisp;
+module.exports = datamodel;

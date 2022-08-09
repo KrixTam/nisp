@@ -15,7 +15,6 @@ var data = {
     EVENT_ID_LEN: 18,
     EPOCH_MOMENT: '2020-12-21',
     EPOCH_DEFAULT: 1608480000,
-    HEARTBEAT_ID: 0,
     POSITION_CODE_MIN: 0,
 	POSITION_CODE_MAX: 7,
 	RANDOM_CODE_MIN: 0,
@@ -27,12 +26,14 @@ var data = {
 	STATE_INIT_END: 1,
 	STATE_PROCESS_APPLY: 2,
 	STATE_PROCESS_END: 3,
+	HEARTBEAT_ID: '000000000000',
     KEY_EVENT_ID: 'eid',
 	KEY_DATA: 'data',
 	KEY_ERROR_CODE: 'ec',
 	KEY_NAME: 'name',
     ERROR_DEF: {
-		'1000': '[{0}] 连接建立。',
+    	'999': '[{0}] 临时打印信息：{1}\n',
+		'1000': '[{0}] NISP连接建立。',
 	    '1001': '[{0}] unpack_event_id方法遇到非法id<{1}>，时间逆流，unpack失败。',
 	    '1002': '[{0}] unpack_event_id方法random_code校验失败({1} ≠ {2})。',
 	    '1003': '[{0}] Command创建失败，初始化数值<{1}, {2}>异常，超过系统设定的范围。',
@@ -40,12 +41,24 @@ var data = {
 	    '1005': '[{0}] Command<{1}>未注册，处理回调方法不能为null，注册并创建Command失败。',
 	    '1006': '[{0}] Command<{1}>已注册，不能重复注册。',
 	    '1007': '[{0}] Event.process的参数data<{1}>非dictionary，类型错误。',
+	    '1008': '[{0}] register_command的参数init_callback和process_callback类型必须为<function>。',
 	    '1100': '[{0}] separate_bits方法中的参数值异常。',
+	    '1200': '[{0}] NISPClient获得异常反馈数据<{1}>。',
+	    '1201': '[{0}] NISPClient服务异常，错误信息：{1}',
+	    '1202': '[{0}] init_commands失败，参数commands值不符合要求<{1}>。',
+	    '1203': '[{0}] NISP连接被服务端断开。',
+	    '1204': '[{0}] generate_event_index调用参数不符合要求。',
 	}
 };
+
+// 错误码分类：
+// 1001-1099 datamodel
+// 1100-1199 utils
+// 1000, 1200-1299 client
 
 data.RANDOM_CODE_MAX = (1 << data.RANDOM_CODE_BITS) - 1;
 data.COMMAND_ID_MAX = (1 << data.COMMAND_ID_BITS) - 1;
 data.REQUEST = '{ "' + data.KEY_EVENT_ID + '": "{eid}", "' + data.KEY_ERROR_CODE + '": {ec}, "' + data.KEY_DATA + '": {data} }';
+// data.KEY_DATA = 'data';
 
 module.exports = Object.freeze(data);

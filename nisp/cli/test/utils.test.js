@@ -19,15 +19,15 @@ describe('测试String.format', () => {
 describe('测试logger', () => {
 
 	test('info', () => {
-		expect(utils.logger.info([1000])).toBe('[1000] 连接建立。');
+		expect(utils.logger.info([1000])).toBe('[1000] NISP连接建立。');
 	});
 
 	test('warn', () => {
-		expect(utils.logger.warn([1000])).toBe('[1000] 连接建立。');
+		expect(utils.logger.warn([1000])).toBe('[1000] NISP连接建立。');
 	});
 
 	test('error', () => {
-		expect(utils.logger.error([1000])).toBe('[1000] 连接建立。');
+		expect(utils.logger.error([1000])).toBe('[1000] NISP连接建立。');
 	});
 
 	test('info undefined', () => {
