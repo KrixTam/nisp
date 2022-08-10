@@ -37,11 +37,27 @@ const generate_event_index = function (...args) {
 	}
 };
 
+const once = function (emitter, event_name, listener) {
+    return new Promise(function (resolve) {
+        emitter.once(event_name, (data) => {
+        	let res = listener(data);
+        	resolve(res);
+        });
+    });
+};
+
+var noop = function () {};
+
+let HEARTBEAT = {};
+HEARTBEAT[constants.HEARTBEAT_ID] = function (data) {};
+
+init_commands(HEARTBEAT);
+
 var NISPClient = function (fd_path) {
 	var that = this;
 	this.connected = false;
 	this.name = null;
-	this.heartBeatList = new Array();
+	// this.heartBeatList = new Array();
 	this._processings = {};
 	this._emitter = new events.EventEmitter();
 	this._fd = { path: fd_path };
@@ -55,15 +71,27 @@ var NISPClient = function (fd_path) {
 		} else {
 			if ((constants.KEY_EVENT_ID in response_content) && (constants.KEY_ERROR_CODE in response_content) && (constants.KEY_DATA in response_content)) {
 				let [cid, state, timestamp] = datamodel.unpack_event_id(response_content.eid);
-				if (cid == constants.HEARTBEAT_ID) {
-					// TODO...
-					that.heartBeatList.pop();
-				} else {
-					logger.info([999, data.toString()]);
-				}
+				logger.info([999, data.toString()]);
+				let state_value = parseInt(state, 2);
 				let event_index = generate_event_index(cid, timestamp);
-				that._processings[event_index] = content;
-				that._emitter.emit(event_index);
+				if (cid == constants.HEARTBEAT_ID) {
+					if (state_value == constants.STATE_PROCESS_END) {
+						that._emitter.emit(event_index);	
+					}
+				} else {
+					if (state_value == constants.STATE_INIT_END) {
+						that._emitter.emit(event_index, response_content.data).then()
+					} else {
+						if (state_value == constants.STATE_PROCESS_END) {
+
+						}
+					}
+				}
+				
+				if (event_index in that._processings) {
+					that._processings[event_index] = content;
+					that._emitter.emit(event_index);
+				}
 			} else {
 				logger.warn([1200, data.toString()]);
 			}
@@ -72,34 +100,29 @@ var NISPClient = function (fd_path) {
 	});
 	this._client.on('connect', function () {
 		that.connected = true;
+		// that.heartbeat();
 		logger.info([1000]);
 	});
 	this._client.on('end', function () {
+		that.connected = false;
 		// that.clearHeartBeat();
 		logger.warn([1203]);
 	});
+	/* istanbul ignore next */
 	this._client.on('error', function (err) {
 		logger.error([1201, err]);
 	});
 };
 
-NISPClient.prototype.sendHeartBeat = function (now) {
-	this.write('HB0000' + now, 'HB0000', {}, noop);
-};
-
-NISPClient.prototype.send = function (req, res, event, data, callback) {
+NISPClient.prototype.heartbeat = function () {
 	var that = this;
-	let event_index = generate_event_index(event);
-	this.write(event, data, function () {
-		var content = that._processings[event_index];
-		delete that._processings[event_index];
-		if (callback) {
-			callback(req, res, content);
-		};
+	let evt = new datamodel.Event(constants.HEARTBEAT_ID);
+	this.send(evt, this.name, () => {
+		setTimeout(that.heartbeat(), 10000);
 	});
 };
 
-NISPClient.prototype.write = function (event, data, callback) {
+NISPClient.prototype.send = function (event, data, callback) {
 	// let evt = null;
 	// if (null == event_id) {
 	// 	evt = new datamodel.Event(command_id, state);
@@ -107,9 +130,9 @@ NISPClient.prototype.write = function (event, data, callback) {
 	// 	let [cid, state_bin, ts] = datamodel.unpack_event_id(event_id);
 	// 	evt = new datamodel.Event(cid, state_bin, ts);
 	// }
-	let event_index = generate_event_index(event);
 	let content = event.process(data);
 	if (null != content) {
+		let event_index = generate_event_index(event);
 		this._processings[event_index] = null;
 		this._client.write(content);
 		this._emitter.once(event_index, callback);
@@ -117,19 +140,27 @@ NISPClient.prototype.write = function (event, data, callback) {
 };
 
 NISPClient.prototype.reconnect = function () {
-	this._client.connect(this._fd);
+	if (this.connected == false) {
+		this._client.connect(this._fd);	
+	}
 };
 
-NISPClient.prototype.clearHeartBeat = function () {
-	this.connected = false;
-	var length = this.heartBeatList.length;
-	this.heartBeatList.splice(0, length);
-};
+// NISPClient.prototype.clearHeartBeat = function () {
+// 	this.connected = false;
+// 	var length = this.heartBeatList.length;
+// 	this.heartBeatList.splice(0, length);
+// };
 
 NISPClient.prototype.end = function() {
 	this.connected = false;
 	this._client.end();
 };
+
+// NISPClient.prototype.close = function() {
+// 	this.connected = false;
+// 	this._client.close();
+// 	this._client.destroy();
+// };
 
 // var config = require('./config').config;
 // var nispClient = new NISPClient(config.socket);
@@ -151,8 +182,6 @@ NISPClient.prototype.end = function() {
 
 // setInterval(sendHeartBeat, config.heartBeat);
 
-var noop = function () {};
-
 
 const core = {
 	noop: noop,
@@ -161,6 +190,7 @@ const core = {
 	default_init_cb: default_init_cb,
 	init_commands: init_commands,
 	generate_event_index: generate_event_index,
+	once: once,
 };
 
 module.exports = core;

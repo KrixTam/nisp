@@ -148,7 +148,7 @@ Event.prototype.eid = function () {
 };
 
 Event.prototype.process = function (data) {
-	if (data.constructor == Object) {
+	if ((data.constructor == Object) || (typeof(data) == 'number') || (typeof(data) == 'string')) {
 		let result = this.command.next(data)
 		if (result == null) {
 			return null;

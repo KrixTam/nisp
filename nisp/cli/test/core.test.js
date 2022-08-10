@@ -1,5 +1,6 @@
 const moment = require('moment');
 const net = require('net');
+const events = require('events');
 const datamodel = require('../datamodel');
 const utils = require('../utils');
 const core = require('../core');
@@ -75,11 +76,25 @@ describe('测试generate_event_index', () => {
 
 });
 
+describe('测试once', () => {
+
+	test('正常情况', () => {
+		let emitter = new events.EventEmitter();
+		let b = -1;
+		core.once(emitter, 'a', (a) => { return a + 2; }).then((r) => { b = r * 3; });
+		emitter.emit('a', 2);
+		setTimeout(() => {
+			expect(b).toBe(12);
+		}, 200);
+	});
+
+});
+
 describe('测试NISPClient', () => {
 
 	test('connect', done => {
 		let server = net.createServer();
-		let fd_path = './test.client.sock';
+		let fd_path = './test.client.01.sock';
 		server.listen(fd_path);
 		server.on('connection', function (socket) {
 			socket.write('{"name": "test_abc"}');
@@ -95,24 +110,60 @@ describe('测试NISPClient', () => {
 		let client = new core.NISPClient(fd_path);
 	});
 
-	// test('connect', done => {
-	// 	let server = net.createServer();
-	// 	let fd_path = './test.client.sock';
-	// 	server.listen(fd_path);
-	// 	server.on('connection', function (socket) {
-	// 		socket.write('{"name": "test_abc"}');
-	// 		setTimeout(() => {
-	// 			expect(client.name).toBe('test_abc');
-	// 			setTimeout(async () => {
-	// 				socket.end();
-	// 				server.close();
-	// 				done();
-	// 			}, 300);
-	// 		}, 300);
-	// 	});
-	// 	let client = new core.NISPClient(fd_path);
-	// });
+	test('end', done => {
+		let count = 0;
+		let server = net.createServer((stream) => {
+			stream.on('end', () => {
+				count = count - 1;
+			});
+		});
+		let fd_path = './test.client.02.sock';
+		server.listen(fd_path);
+		server.on('connection', function (socket) {
+			socket.write('{"name": "test_abc"}');
+			count = count + 2;
+			setTimeout(() => {
+				client.end();
+				setTimeout(async () => {
+					server.close();
+					expect(count).toBe(1);
+					done();
+				}, 200);
+			}, 200);
+		});
+		let client = new core.NISPClient(fd_path);
+	});
 
+	test('reconnect', done => {
+		let count = 0;
+		let server = net.createServer((stream) => {
+			stream.on('end', () => {
+				count = count - 3;
+			});
+		});
+		let fd_path = './test.client.03.sock';
+		server.listen(fd_path);
+		let flag = true;
+		server.on('connection', function (socket) {
+			socket.write('{"name": "test_abc"}');
+			count = count + 4;
+			if (flag) {
+				flag = false;
+				socket.end();
+				setTimeout(() => {
+					client.reconnect();
+				}, 200);
+			} else {
+				setTimeout(async () => {
+					server.close();
+					client.end();
+					expect(count).toBe(5);
+					done();
+				}, 200);
+			}
+		});
+		let client = new core.NISPClient(fd_path);
+	});
 
 });
 
