@@ -8,6 +8,12 @@ const constants = require('../constants');
 
 
 // jest.setTimeout(10000);
+// jest.useFakeTimers();
+
+function log () {
+	let msg = '==== timer: ' + moment().format('YYYY-MM-DD HH:mm:ss.SSS');
+	console.log(msg);
+}
 
 
 function delay(time) {
@@ -117,7 +123,6 @@ describe('测试NISPClient', () => {
 		let fd_path = './test.client.02.sock';
 		let server = net.createServer((socket) => {
 			socket.on('end', () => {
-				console.log('8778787878')
 				count = count - 1;
 			});
 		}).listen(fd_path);
@@ -139,7 +144,6 @@ describe('测试NISPClient', () => {
 		let flag = true;
 		let server = net.createServer((socket) => {
 			socket.on('end', () => {
-				console.log('4455666644444');
 				count = count - 3;
 			});
 		}).listen(fd_path);
@@ -147,7 +151,6 @@ describe('测试NISPClient', () => {
 			count = count + 4;
 			if (flag) {
 				flag = false;
-				console.log('444444444');
 				client.end();
 				setTimeout(() => {
 					client.reconnect();
@@ -165,53 +168,152 @@ describe('测试NISPClient', () => {
 		let client = new core.NISPClient(fd_path);
 	});
 
-	// test('heartbeat测试', done => {
-	// 	let count = 0;
-	// 	let fd_path = './test.client.03.sock';
-	// 	let server = net.createServer((stream) => {
-	// 		stream.on('data', (msg) => {
-	// 			if (count < 4) {
-	// 				console.log('333333333');
-	// 				console.log(msg.toString());
-	// 				let req = JSON.parse(msg.toString());
-	// 				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
-	// 				expect(cid).toBe(constants.HEARTBEAT_ID);
-	// 				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
-	// 				let res = {};
-	// 				res[constants.KEY_EVENT_ID] = evt.eid();
-	// 				res[constants.KEY_DATA] = {};
-	// 				res[constants.KEY_ERROR_CODE] = 0;
-	// 				stream.write(JSON.stringify(res));
-	// 				count = count + 1;		
-	// 			}
-	// 		});
-	// 	}).listen(fd_path);
-	// 	// let fn = function () {
-	// 	// 	setTimeout(() => {
-	// 	// 		console.log('5555555555');
-	// 	// 		if (count < 4) {
-	// 	// 			fn();
-	// 	// 		} else {
-	// 	// 			setTimeout(async () => {
-	// 	// 				client.end();
-	// 	// 				server.close();
-	// 	// 				expect(count).toBe(4);
-	// 	// 				done();
-	// 	// 			}, 200);
-	// 	// 		}
-	// 	// 	}, 200);
-	// 	// };
-	// 	server.on('connection', function (socket) {
-	// 		socket.write('{"name": "test_abc"}');
-	// 		setTimeout(async () => {
-	// 			client.end();
-	// 			server.close();
-	// 			expect(count).toBe(4);
-	// 			done();
-	// 		}, 2400);
-	// 	});
-	// 	let client = new core.NISPClient(fd_path, 500);
-	// });
+	test('heartbeat测试_01', done => {
+		let count = 0;
+		let fd_path = './test.client.04.sock';
+		let server = net.createServer((socket) => {
+			socket.on('data', (msg) => {
+				let req = JSON.parse(msg.toString());
+				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				expect(cid).toBe(constants.HEARTBEAT_ID);
+				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
+				let res = {};
+				res[constants.KEY_EVENT_ID] = evt.eid();
+				res[constants.KEY_DATA] = {};
+				res[constants.KEY_ERROR_CODE] = 0;
+				socket.write(JSON.stringify(res));
+				count = count + 1;
+			});
+		}).listen(fd_path);
+		server.on('connection', (socket) => {
+			socket.write('{"name": "test_abc"}');
+			setTimeout(() => {
+				server.close();
+				client.close();
+				expect(count).toBe(4);
+				done();
+			}, 1900);
+		});
+		let client = new core.NISPClient(fd_path, 500);
+	});
+
+	test('heartbeat测试_02', done => {
+		let count = 0;
+		let fd_path = './test.client.05.sock';
+		let server = net.createServer((socket) => {
+			socket.on('data', (msg) => {
+				let req = JSON.parse(msg.toString());
+				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				expect(cid).toBe(constants.HEARTBEAT_ID);
+				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
+				let res = {};
+				res[constants.KEY_EVENT_ID] = evt.eid();
+				res[constants.KEY_DATA] = {};
+				res[constants.KEY_ERROR_CODE] = 0;
+				socket.write(JSON.stringify(res));
+				count = count + 1;
+			});
+		}).listen(fd_path);
+		server.on('connection', (socket) => {
+			socket.write('{"name": "test_abc"}');
+			setTimeout(() => {
+				socket.end();
+				setTimeout(() => {
+					client.heartbeat();
+					server.close();
+					client.close();
+					expect(count).toBe(3);
+					done();
+				}, 300);
+			}, 1200);
+		});
+		let client = new core.NISPClient(fd_path, 500);
+	});
+
+	test('heartbeat测试_03', done => {
+		let count = 0;
+		let fd_path = './test.client.06.sock';
+		let server = net.createServer((socket) => {
+			socket.on('data', (msg) => {
+				let req = JSON.parse(msg.toString());
+				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				expect(cid).toBe(constants.HEARTBEAT_ID);
+				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_APPLY, ts);
+				let res = {};
+				res[constants.KEY_EVENT_ID] = evt.eid();
+				res[constants.KEY_DATA] = {};
+				res[constants.KEY_ERROR_CODE] = 0;
+				socket.write(JSON.stringify(res));
+				count = count + 1;
+			});
+		}).listen(fd_path);
+		server.on('connection', (socket) => {
+			socket.write('{"name": "test_abc"}');
+			setTimeout(() => {
+				socket.end();
+				setTimeout(() => {
+					client.heartbeat();
+					server.close();
+					client.close();
+					expect(count).toBe(1);
+					done();
+				}, 300);
+			}, 1200);
+		});
+		let client = new core.NISPClient(fd_path, 500);
+	});
+
+	test('error测试_01', done => {
+		let fd_path = './test.client.07.sock';
+		let server = net.createServer().listen(fd_path);
+		server.on('connection', (socket) => {
+			socket.write('{"name": "test_abc"}');
+			setTimeout(() => {
+				server.close();
+				expect(client.name).toBe('test_abc');
+				setTimeout(() => {
+					client._client.emit('error', new Error('ECONNRESET'));
+					setTimeout(() => {
+						client.close();
+						done();
+					}, 200);
+				}, 200);
+			}, 200);
+		});
+		let client = new core.NISPClient(fd_path);
+	});
+
+	test('error测试_02', done => {
+		let count = 0;
+		let fd_path = './test.client.07.sock';
+		let server = net.createServer((socket) => {
+			socket.on('data', (msg) => {
+				let req = JSON.parse(msg.toString());
+				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				expect(cid).toBe(constants.HEARTBEAT_ID);
+				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
+				let res = {};
+				res[constants.KEY_EVENT_ID] = evt.eid();
+				res[constants.KEY_DATA] = {};
+				socket.write(JSON.stringify(res));
+				count = count + 1;
+			});
+		}).listen(fd_path);
+		server.on('connection', (socket) => {
+			socket.write('{"name": "test_abc"}');
+			setTimeout(() => {
+				socket.end();
+				setTimeout(() => {
+					client.heartbeat();
+					server.close();
+					client.close();
+					expect(count).toBe(1);
+					done();
+				}, 300);
+			}, 1200);
+		});
+		let client = new core.NISPClient(fd_path, 500);
+	});
 
 });
 
