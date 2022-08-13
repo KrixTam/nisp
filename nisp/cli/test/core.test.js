@@ -34,6 +34,7 @@ describe('测试default_init_cb', () => {
 		let n = 'my_call_back';
 		let key = constants.KEY_NAME;
 		let r = core.default_init_cb(n);
+		console.log(r);
 		expect(Object.keys(r).length).toBe(1);
 		expect((key in r)).toBe(true);
 		expect(r[key]).toBe(n);

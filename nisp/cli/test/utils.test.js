@@ -117,3 +117,46 @@ describe('测试bin_to_hex', () => {
 	});
 
 });
+
+describe('测试remove', () => {
+
+	test('正常情况', () => {
+		let a = [1, 2, 3, 4, 5, 6];
+		expect(a[1]).toBe(2);
+		expect(a.length).toBe(6);
+		a.remove(2);
+		expect(a[1]).toBe(3);
+		expect(a.length).toBe(5);
+		a.remove(3, true)
+		expect(a[1]).toBe(5);
+		expect(a.length).toBe(3);
+	});
+
+	test('失败情况', () => {
+		let a = [1, 2, 3, 4, 5, 6];
+		expect(a.remove(0)).toBe(false);
+		expect(a.length).toBe(6);
+	});
+
+});
+
+describe('测试copy_json', () => {
+
+	test('正常情况', () => {
+		let a = {'123': 2};
+		expect(a['123']).toBe(2);
+		let b = utils.copy_json(a);
+		b['123'] = 4;
+		expect(a['123']).toBe(2);
+		expect(b['123']).toBe(4);
+		let c = utils.copy_json('{"123": 2}');
+		expect(a['123']).toBe(c['123']);
+	});
+
+	test('失败情况', () => {
+		let a = [1, 2, 3, 4, 5, 6];
+		expect(utils.copy_json(a)).toBe(null);
+		expect(a.length).toBe(6);
+	});
+
+});

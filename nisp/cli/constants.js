@@ -40,8 +40,7 @@ var data = {
 	    '1004': '[{0}] Event创建时遇到非法时间<{1}>，导致时间逆流现象，获取id失败。',
 	    '1005': '[{0}] Command<{1}>未注册，处理回调方法不能为null，注册并创建Command失败。',
 	    '1006': '[{0}] Command<{1}>已注册，不能重复注册。',
-	    '1007': '[{0}] Event.process的参数data<{1}>非dictionary，类型错误。',
-	    '1008': '[{0}] register_command的参数init_callback和process_callback类型必须为<function>。',
+	    '1007': '[{0}] register_command的参数init_callback和process_callback类型必须为<function>。',
 	    '1100': '[{0}] separate_bits方法中的参数值异常。',
 	    '1200': '[{0}] NISPClient获得异常反馈数据<{1}>。',
 	    '1201': '[{0}] NISPClient服务异常，错误信息：{1}',
@@ -49,7 +48,9 @@ var data = {
 	    '1203': '[{0}] NISP连接被服务端断开。',
 	    '1204': '[{0}] generate_event_index调用参数不符合要求。',
 	    '1205': '[{0}] NISP服务端心跳异常，主动断开连接。',
-	    '1206': '[{0}] NISP服务已断开，请重新连接后再发送心跳信息。',
+	    '1206': '[{0}] NISP服务已断开，请重新连接后再执行apply_command<{1}>。',
+	    '1207': '[{0}] NISP服务已断开，请重新连接后再执行send_command<{1}>。',
+	    '1208': '[{0}] NISP服务端消息异常，主动断开连接。',
 	}
 };
 

@@ -232,11 +232,4 @@ describe('测试Event', () => {
         expect(evt.command.state).toBe(parseInt(state_02, 2));
     });
 
-    test('process_04', () => {
-        let evt = new datamodel.Event(8);
-        let res = JSON.parse(evt.process([2, 7]));
-        expect(res).toBe(null);
-        expect(evt.command.state).toBe(constants.STATE_INIT_PRE);
-    });
-
 });

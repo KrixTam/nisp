@@ -14,6 +14,24 @@ String.prototype.format = function (messages) {
 	}.bind(this));
 };
 
+Array.prototype.remove = function (element, all=false) {
+	let index = this.indexOf(element);
+	let that = this;
+	if (index > -1) {
+		if (all) {
+			for (let i = 0; i <= index; i++) {
+				this.splice(0, 1);
+			}
+			return true;
+		} else {
+			this.splice(index, 1);
+			return true;
+		}
+	} else {
+		return false;
+	}
+};
+
 var NISPLogger = function (error_def, logger_name='nisp', log_file='nisp.log') {
 	let that = this;
 	this._name = logger_name;
@@ -110,6 +128,17 @@ const utils = {
 		}
 		hex_str.reverse();
 		return hex_str.join('');
+	},
+	copy_json: function (dict) {
+		if (typeof(dict) == 'string') {
+			return JSON.parse(dict);
+		} else {
+			if (dict.constructor == Object) {
+				return JSON.parse(JSON.stringify(dict));
+			} else {
+				return null;
+			}
+		}
 	}
 };
 

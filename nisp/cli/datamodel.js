@@ -64,7 +64,7 @@ const register_command = function (cid, init_callback, process_callback) {
 			COMMAND_PROCESSORS[cid] = [init_callback, process_callback];
 			return true;
 		} else {
-			logger.warn([1008]);
+			logger.warn([1007]);
 			return false;
 		}
 	}
@@ -98,14 +98,14 @@ Command.prototype.to_bin = function () {
 	return state + this.cid;
 }
 
-Command.prototype.next = function (data) {
+Command.prototype.next = function (...data) {
 	let result = null;
 	if (this.state < constants.STATE_MAX) {
 		if (this.state == constants.STATE_INIT_PRE) {
-			result = this.init_cb(data);
+			result = this.init_cb(...data);
 		}
 		if (this.state == constants.STATE_INIT_END) {
-			result = this.process_cb(data);
+			result = this.process_cb(...data);
 		}
 		this.state = this.state + 1;
 	}
@@ -147,22 +147,16 @@ Event.prototype.eid = function () {
 	return bin_to_hex(eid_bin);
 };
 
-Event.prototype.process = function (data) {
-	if ((data.constructor == Object) || (typeof(data) == 'number') || (typeof(data) == 'string')) {
-		let result = this.command.next(data)
-		if (result == null) {
-			return null;
-		} else {
-			let request_content = {};
-			request_content[constants.KEY_EVENT_ID] = this.eid();
-			request_content[constants.KEY_DATA] = result;
-			return JSON.stringify(request_content);
-		}
-	} else {
-		logger.warn([1007, data]);
+Event.prototype.process = function (...data) {
+	let result = this.command.next(...data);
+	if (result == null) {
 		return null;
+	} else {
+		let request_content = {};
+		request_content[constants.KEY_EVENT_ID] = this.eid();
+		request_content[constants.KEY_DATA] = result;
+		return JSON.stringify(request_content);
 	}
-	
 };
 
 const datamodel = {
