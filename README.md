@@ -147,3 +147,66 @@ python run_coverage.py
 - `EventId.unpack` 对未来时间进行“逆流”检查，异常会导致处理失败或断开
 - 心跳仅在 `name` 已注册的前提下有效，握手后需保持该 `name` 一致传输
 
+## EventId 与 EID 格式
+
+- 事件 ID `eid` 统一为 22 位小写十六进制字符串：前 18 位为事件编码，末尾 4 位为 `client_id`。
+- `client_id` 为必填，必须是 4 位小写十六进制（例如 `abcd`）。
+- Python 构造签名（参数顺序调整）：`EventId(client_id: str, cid: int = 0, state: int = STATE_INIT, timestamp: moment = None)`。
+- 序列化：`str(eid)` 返回 22 位字符串（`18位事件编码 + 4位client_id`）。
+- 解析：`EventId.unpack(...)` 返回 4 元组 `(cid, state, timestamp, client_id)`。
+
+示例（Python）：
+```python
+from nisp.datamodel import EventId
+from nisp.const import STATE_INIT
+from moment import moment
+
+eid = EventId('abcd', cid=1, state=STATE_INIT, timestamp=moment('2021-01-02 12:23:22'))
+eid_str = str(eid)  # 22 位，结尾为 'abcd'
+cid, state, ts, client_id = EventId.unpack(eid_str)
+assert client_id == 'abcd'
+```
+
+## 请求/响应消息格式约束
+
+- `KEY_EVENT_ID`（`eid`）必须匹配 `^[a-f0-9]{22}$`。
+- 心跳请求 `KEY_NAME`（即 `client_id`）必须是 `^[a-f0-9]{4}$`。
+
+示例（YAML/JSON）：
+```json
+// 请求
+{ "eid": "58ca6e32b444000000abcd", "data": { ... } }
+
+// 响应
+{ "eid": "58ca6e32b444000000abcd", "data": { ... }, "ec": 0 }
+```
+
+## 心跳与超时
+
+- 心跳使用 `client_id`（4 位 hex）作为标识并在服务器注册。
+- 服务器侧心跳超时会打印：`[client_id] 心跳超时（>Ns），断开连接。`
+- 事件处理侧超时会打印：`[eid][client_id] 事件超时（>Xs），断开连接。`
+- 超时触发将返回 `None`（协议层会断开连接）。
+
+## Quick Start（Python）
+
+- 启动服务器（示例在 `run_s.py`）：保持不变。
+- 发送事件（构造 22 位 `eid`，包含 `client_id`）：
+
+```python
+from nisp.datamodel import Event, EventId
+from nisp.const import STATE_INIT
+
+client_id = 'abcd'  # 必须是 4 位小写十六进制
+eid = EventId(client_id, cid=1, state=STATE_INIT)
+e = Event(str(eid))
+payload = { "name": client_id }
+res = e.process(payload)
+# 事件处理可能返回响应或因超时/状态返回 None
+```
+
+## 兼容性说明
+
+- 旧版 18 位 `eid` 不再支持，会在参数校验阶段（或 `EventId.unpack`）抛出错误。
+- 所有构造 `EventId(...)` 的代码需要显式传入 `client_id`（首位参数）。
+

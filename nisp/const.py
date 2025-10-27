@@ -1,7 +1,6 @@
 from moment import moment
 from ni.config import ParameterValidator
 
-
 EPOCH_DEFAULT = 1608480000
 EPOCH_MOMENT = moment('2020-12-21')
 
@@ -36,6 +35,7 @@ SERVER_STOP = 2
 HEARTBEAT_ID = 0
 
 TIMEOUT_MIN = 1
+HEARTBEAT_TIMEOUT_DEFAULT = 2
 TIMEOUT_DEFAULT = 2
 TIMEOUT_MAX = 5
 
@@ -48,6 +48,7 @@ HEX_REG = '{0:0{1}x}'
 
 EVENT_ID_LEN = 18
 TS_PACKAGE_LEN = 8
+CLIENT_ID_LEN = 4  # 新增：client_id长度（hex4）
 
 KEY_EVENT_ID = 'eid'
 KEY_DATA = 'data'
@@ -56,7 +57,7 @@ KEY_NAME = 'name'
 
 EVENT_ID = {
     'type': 'string',
-    'pattern': '^[a-f0-9]{18}'
+    'pattern': '^[a-f0-9]{22}$'  # 固定为22位：18位事件编码 + 4位client_id
 }
 
 PV_REQUEST = ParameterValidator({

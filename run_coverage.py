@@ -34,10 +34,12 @@ test_modules = [
     'nisp.test.datamodel.test_EventId',
     'nisp.test.datamodel.test_Event',
     'nisp.test.server.test_Server',
+    'nisp.test.server.test_HeartbeatTimeout',
+    'nisp.test.datamodel.test_EventTimeout',
 ]
 
 # 执行测试用例
-cov = coverage.Coverage()
+cov = coverage.Coverage(source=["./nisp"])
 cov.start()
 
 run_all_tests(test_modules)

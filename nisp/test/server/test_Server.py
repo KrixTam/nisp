@@ -40,16 +40,16 @@ class TestClient02(Protocol):  # pragma: no cover
         received_data = yaml.safe_load(data)
         if KEY_NAME in received_data:
             self.name = received_data[KEY_NAME]
-            self.eid = EventId()
+            self.eid = EventId(self.name)
             response = response_template.substitute(eid=str(self.eid), data='{"name": "' + self.name + '"}').encode('utf-8')
             NISProtocol.register(self.name)
             self.transport.write(response)
         else:
-            cid, state, timestamp = EventId.unpack(received_data[KEY_EVENT_ID])
-            eid_01 = EventId(cid.value, state.value, timestamp)
+            cid, state, timestamp, client_id = EventId.unpack(received_data[KEY_EVENT_ID])
+            eid_01 = EventId(client_id, cid.value, state.value, timestamp)
             print(eid_01)
-            cid, state, timestamp = EventId.unpack(self.eid.value)
-            eid_02 = EventId(cid.value, STATE_PROCESS_END, timestamp)
+            cid, state, timestamp, _ = EventId.unpack(eid_01)
+            eid_02 = EventId(self.name, cid.value, STATE_PROCESS_END, timestamp)
             print(eid_02)
             if received_data[KEY_ERROR_CODE] == 0 and eid_01.core == eid_02.core:
                 self.check_result = True
@@ -71,14 +71,14 @@ class TestClient03(Protocol):  # pragma: no cover
         received_data = yaml.safe_load(data)
         if KEY_NAME in received_data:
             self.name = received_data[KEY_NAME]
-            self.eid = EventId()
+            self.eid = EventId(self.name)
             response = response_template.substitute(eid=str(self.eid), data='{"name": "' + self.name + '1"}').encode('utf-8')
             self.transport.write(response)
         else:
-            cid, state, timestamp = EventId.unpack(received_data[KEY_EVENT_ID])
-            eid_01 = EventId(cid.value, state.value, timestamp)
-            cid, state, timestamp = EventId.unpack(self.eid.value)
-            eid_02 = EventId(cid.value, STATE_PROCESS_END, timestamp)
+            cid, state, timestamp, client_id = EventId.unpack(received_data[KEY_EVENT_ID])
+            eid_01 = EventId(client_id, cid.value, state.value, timestamp)
+            cid, state, timestamp, _ = EventId.unpack(self.eid.value)
+            eid_02 = EventId(self.name, cid.value, STATE_PROCESS_END, timestamp)
             if received_data[KEY_ERROR_CODE] == 0 and eid_01.core == eid_02.core:
                 self.check_result = True
             self.transport.loseConnection()
@@ -98,15 +98,15 @@ class TestClient04(Protocol):  # pragma: no cover
         received_data = yaml.safe_load(data)
         if KEY_NAME in received_data:
             self.name = received_data[KEY_NAME]
-            self.eid = EventId()
+            self.eid = EventId(self.name)
             response = '{"eid" : "' + str(self.eid) + '"}'
             response = response.encode('utf-8')
             self.transport.write(response)
         else:
-            cid, state, timestamp = EventId.unpack(received_data[KEY_EVENT_ID])
-            eid_01 = EventId(cid.value, state.value, timestamp)
-            cid, state, timestamp = EventId.unpack(self.eid.value)
-            eid_02 = EventId(cid.value, STATE_PROCESS_END, timestamp)
+            cid, state, timestamp, client_id = EventId.unpack(received_data[KEY_EVENT_ID])
+            eid_01 = EventId(client_id, cid.value, state.value, timestamp)
+            cid, state, timestamp, _ = EventId.unpack(self.eid.value)
+            eid_02 = EventId(self.name, cid.value, STATE_PROCESS_END, timestamp)
             if received_data[KEY_ERROR_CODE] == 0 and eid_01.core == eid_02.core:
                 self.check_result = True
             self.transport.loseConnection()

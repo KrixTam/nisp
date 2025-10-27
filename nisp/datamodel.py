@@ -130,7 +130,7 @@ class Command(object):
 class EventId(object):
     _epoch = EPOCH_DEFAULT
 
-    def __init__(self, cid: int = 0, state: int = STATE_INIT, timestamp: moment = None):
+    def __init__(self, client_id: str, cid: int = 0, state: int = STATE_INIT, timestamp: moment = None):
         random_code = BIN_REG.format(random.randint(RANDOM_CODE_MIN, RANDOM_CODE_MAX), RANDOM_CODE_BITS)
         position_code_value = random.randint(POSITION_CODE_MIN, POSITION_CODE_MAX)
         position_code = BIN_REG.format(position_code_value, POSITION_CODE_BITS)
@@ -139,6 +139,10 @@ class EventId(object):
         self._random_code = random_code
         self._timestamp_shadow = timestamp_shadow
         self._position_code = position_code
+        # 必选：client_id（hex4）
+        if (client_id is None) or (not isinstance(client_id, str)) or (len(client_id) != CLIENT_ID_LEN) or (not all(c in '0123456789abcdef' for c in client_id)):
+            raise ValueError(logger.error([1200, 'client_id', client_id, 0, 'ffff']))
+        self._client_id = client_id
 
     @property
     def value(self):
@@ -146,16 +150,16 @@ class EventId(object):
         return int(encode, 2)
 
     def __str__(self):
-        return HEX_REG.format(self.value, EVENT_ID_LEN)
+        # 18位事件编码 + 4位client_id
+        return HEX_REG.format(self.value, EVENT_ID_LEN) + self._client_id
 
     def __eq__(self, other):
-        if isinstance(other, str):
-            return str(self) == other
-        if isinstance(other, EventId):
-            return str(self) == str(other)
-        if isinstance(other, int):
-            return self.value == other
-        raise TypeError(logger.error([1203, other, type(other)]))
+        if isinstance(other, EventId) or isinstance(other, str):
+            cid_other, state_other, timestamp_other, client_id_other = EventId.unpack(other)
+            cid, state, timestamp, client_id = EventId.unpack(str(self))
+            return (cid == cid_other) and (state == state_other) and (timestamp == timestamp_other) and (client_id == client_id_other)
+        else:
+            raise TypeError(logger.error([1203, other, type(other)]))
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -197,15 +201,20 @@ class EventId(object):
     @staticmethod
     def unpack(event_id):
         if isinstance(event_id, str):
-            value = int(event_id, 16)
+            if len(event_id) != EVENT_ID_LEN + CLIENT_ID_LEN:
+                raise ValueError(logger.error([1200, 'eid_len', len(event_id), EVENT_ID_LEN + CLIENT_ID_LEN, EVENT_ID_LEN + CLIENT_ID_LEN]))
+            event_id_str = event_id
         else:
             if isinstance(event_id, int):
-                value = event_id
+                event_id_str = HEX_REG.format(event_id, EVENT_ID_LEN + CLIENT_ID_LEN)
             else:
                 if isinstance(event_id, EventId):
-                    value = int(str(event_id), 16)
+                    event_id_str = str(event_id)
                 else:
                     raise TypeError(logger.error([1204, event_id, type(event_id)]))
+        base = event_id_str[:EVENT_ID_LEN]
+        client_id = event_id_str[EVENT_ID_LEN:EVENT_ID_LEN + CLIENT_ID_LEN]
+        value = int(base, 16)
         left, cid_value = separate_bits(value, COMMAND_ID_BITS)
         left, state_value = separate_bits(left, COMMAND_STATE_BITS)
         cid = CommandId(cid_value)
@@ -232,23 +241,35 @@ class EventId(object):
             timestamp = EPOCH_MOMENT.add(int(ts, 2) + EventId._epoch - EPOCH_DEFAULT, 'ms')
             if timestamp > moment():
                 raise ValueError(logger.error([1205]))
-            return cid, state, timestamp
+            # 返回 client_id
+            return cid, state, timestamp, client_id
         else:
             raise ValueError(logger.error([1206, random_code, random_code_check]))
 
     def next(self, **kwargs):
         return self._command.next(**kwargs)
 
-
 class Event(object):
     template = Template('{ "' + KEY_EVENT_ID + '": "${eid}", "' + KEY_ERROR_CODE + '": ${ec}, "' + KEY_DATA + '": ${data} }')
 
     def __init__(self, eid: str):
-        cid, state, timestamp = EventId.unpack(eid)
-        self._eid = EventId(cid.value, state.value, timestamp)
+        cid, state, timestamp, client_id = EventId.unpack(eid)
+        self._eid = EventId(client_id, cid.value, state.value, timestamp)
 
     def process(self, data: dict):
-        # ToDo: Timeout处理
+        # 事件超时处理
+        try:
+            _, _, ts, _ = EventId.unpack(self._eid.__str__())
+            now = moment()
+            ts_ms = ts.unix() * 1000 + ts.milliseconds()
+            now_ms = now.unix() * 1000 + now.milliseconds()
+            threshold_s = TIMEOUT_DEFAULT
+            if now_ms - ts_ms > threshold_s * 1000:
+                print(f'[{str(self._eid)}] 事件超时（>{threshold_s}s），断开连接。')
+                return None
+        except Exception:  # pragma: no cover
+            pass
+
         response_data, error_code = self._eid.next(**data)
         if response_data is None:
             return None

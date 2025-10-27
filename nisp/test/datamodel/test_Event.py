@@ -19,20 +19,20 @@ class C01(Command):  # pragma: no cover
 
 class TestEvent(unittest.TestCase):
     def test_basic_01(self):
-        eid = EventId()
+        eid = EventId('abcd')
         e = Event(str(eid))
         self.assertEqual(None, e.process({}))
 
     def test_basic_02(self):
         Command.register(1, C01)
-        eid = EventId(cid=1)
+        eid = EventId('abcd', cid=1)
         e = Event(str(eid))
         a = e.process({})
         b = eid.core
         received_data = yaml.safe_load(a)
-        cid, state, timestamp = EventId.unpack(received_data['eid'])
+        cid, state, timestamp, client_id = EventId.unpack(received_data['eid'])
         eid.next()
-        eid_02 = EventId(cid.value, state.value, timestamp)
+        eid_02 = EventId(client_id, cid.value, state.value, timestamp)
         self.assertEqual(eid_02.core, eid.core)
         self.assertNotEqual(eid_02.core, b)
         self.assertEqual({'C01': 123}, received_data['data'])

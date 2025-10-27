@@ -1,0 +1,5 @@
+htmlcov/
+__pycache__/
+.coverage
+nisp.socket
+.DS_Store
