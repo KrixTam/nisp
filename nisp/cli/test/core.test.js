@@ -63,7 +63,8 @@ describe('测试generate_event_index', () => {
 
 	test('正常情况_01', () => {
 		let ts = new moment('2021-01-02 12:23:22');
-		let evt = new datamodel.Event(4, 0, ts);
+		let client_id = 'abcd';
+		let evt = new datamodel.Event(client_id, 4, 0, ts);
 		let evt_index = core.generate_event_index(evt);
 		expect(evt_index).toBe('0045feff53a');
 	});
@@ -175,9 +176,9 @@ describe('测试NISPClient', () => {
 		let server = net.createServer((socket) => {
 			socket.on('data', (msg) => {
 				let req = JSON.parse(msg.toString());
-				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				let [cid, state_bin, ts, client_id] = datamodel.unpack_event_id(req.eid);
 				expect(cid).toBe(constants.HEARTBEAT_ID);
-				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
+				let evt = new datamodel.Event(client.client_id, cid, constants.STATE_PROCESS_END, ts);
 				let res = {};
 				res[constants.KEY_EVENT_ID] = evt.eid();
 				res[constants.KEY_DATA] = {};
@@ -204,9 +205,9 @@ describe('测试NISPClient', () => {
 		let server = net.createServer((socket) => {
 			socket.on('data', (msg) => {
 				let req = JSON.parse(msg.toString());
-				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				let [cid, state_bin, ts, client_id] = datamodel.unpack_event_id(req.eid);
 				expect(cid).toBe(constants.HEARTBEAT_ID);
-				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
+				let evt = new datamodel.Event(client.client_id, cid, constants.STATE_PROCESS_END, ts);
 				let res = {};
 				res[constants.KEY_EVENT_ID] = evt.eid();
 				res[constants.KEY_DATA] = {};
@@ -237,9 +238,9 @@ describe('测试NISPClient', () => {
 		let server = net.createServer((socket) => {
 			socket.on('data', (msg) => {
 				let req = JSON.parse(msg.toString());
-				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				let [cid, state_bin, ts, client_id] = datamodel.unpack_event_id(req.eid);
 				expect(cid).toBe(constants.HEARTBEAT_ID);
-				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_APPLY, ts);
+				let evt = new datamodel.Event(client.client_id, cid, constants.STATE_PROCESS_APPLY, ts);
 				let res = {};
 				res[constants.KEY_EVENT_ID] = evt.eid();
 				res[constants.KEY_DATA] = {};
@@ -290,9 +291,9 @@ describe('测试NISPClient', () => {
 		let server = net.createServer((socket) => {
 			socket.on('data', (msg) => {
 				let req = JSON.parse(msg.toString());
-				let [cid, state_bin, ts] = datamodel.unpack_event_id(req.eid);
+				let [cid, state_bin, ts, client_id] = datamodel.unpack_event_id(req.eid);
 				expect(cid).toBe(constants.HEARTBEAT_ID);
-				let evt = new datamodel.Event(cid, constants.STATE_PROCESS_END, ts);
+				let evt = new datamodel.Event(client.client_id, cid, constants.STATE_PROCESS_END, ts);
 				let res = {};
 				res[constants.KEY_EVENT_ID] = evt.eid();
 				res[constants.KEY_DATA] = {};

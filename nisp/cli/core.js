@@ -57,6 +57,7 @@ var NISPClient = function (fd_path, heartbeat_interval=5000) {
 	this.connected = false;
 	this.name = null;
 	this.heartbeat_interval = heartbeat_interval;
+	this.client_id = null;  // 新增：保存4位hex client_id
 	this._processings = new Array();
 	this._emitter = new events.EventEmitter();
 	this._fd = { path: fd_path };
@@ -65,8 +66,8 @@ var NISPClient = function (fd_path, heartbeat_interval=5000) {
 };
 
 NISPClient.prototype.heartbeat = function () {
-	var that = this;
-	let event = new datamodel.Event(constants.HEARTBEAT_ID);
+	const that = this;
+	let event = new datamodel.Event(this.client_id, constants.HEARTBEAT_ID);
 	this.send(event, () => {
 		that._client.setTimeout(that.heartbeat_interval, () => {
 			that.heartbeat();
@@ -76,7 +77,7 @@ NISPClient.prototype.heartbeat = function () {
 
 NISPClient.prototype.apply_command = function (cid, init_end_callback, process_end_callback) {
 	if (this.connected) {
-		let event = new datamodel.Event(cid);
+		let event = new datamodel.Event(this.client_id, cid);
 		// this.send(evt, this.name, callback);
 		let content = event.process(data);
 		if (null != content) {
@@ -96,7 +97,7 @@ NISPClient.prototype.apply_command = function (cid, init_end_callback, process_e
 
 NISPClient.prototype.send_command = function (cid, ts, data, callback) {
 	if (this.connected) {
-		let event = new datamodel.Event(cid, constants.STATE_INIT_END, ts);
+		let event = new datamodel.Event(this.client_id, cid, constants.STATE_INIT_END, ts);
 		this.send(event, callback, this.name, data);
 	} else {
 		logger.warn([1207, cid]);
@@ -121,6 +122,7 @@ NISPClient.prototype.connect = function () {
 			let response_content = JSON.parse(data.toString());
 			if (constants.KEY_NAME in response_content) {
 				that.name = response_content.name;
+				that.client_id = utils.normalize_clientid(that.name);  // 新增：保存4位hex client_id
 				that.heartbeat();
 			} else {
 				if ((constants.KEY_EVENT_ID in response_content) && (constants.KEY_ERROR_CODE in response_content) && (constants.KEY_DATA in response_content)) {

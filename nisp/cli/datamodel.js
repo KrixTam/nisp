@@ -112,7 +112,7 @@ Command.prototype.next = function (...data) {
 	return result;
 };
 
-var Event = function (cid, state = constants.STATE_INIT_PRE, ts = null) {
+var Event = function (clientId, cid, state = constants.STATE_INIT_PRE, ts = null) {
 	this.command = new Command(cid, null, null, state);
 	this.ts = ts;
 	if (ts == null) {
@@ -140,11 +140,16 @@ var Event = function (cid, state = constants.STATE_INIT_PRE, ts = null) {
     }
     timestamp_shadow_list.reverse();
     this.timestamp_shadow = timestamp_shadow_list.join('');
+	// 新增：保存clientId并规范化为4位小写hex
+    this.clientId = utils.normalize_clientid(clientId);
 };
 
 Event.prototype.eid = function () {
 	let eid_bin = this.random_code + this.timestamp_shadow + this.position_code + this.command.to_bin();
-	return bin_to_hex(eid_bin);
+	// 原有逻辑生成18位事件编码
+    const base18 = bin_to_hex(eid_bin);
+	// 追加4位clientId，形成22位eid
+	return base18 + this.clientId;
 };
 
 Event.prototype.process = function (...data) {
@@ -159,8 +164,22 @@ Event.prototype.process = function (...data) {
 	}
 };
 
+// 修改：unpack返回clientId
+function unpack_event_id(eid) {
+    if (typeof eid !== 'string') throw new TypeError('[1204] unpack_event_id only accepts string');
+    if (!/^[a-f0-9]{22}$/.test(eid)) throw new RangeError('[1001] illegal eid length or pattern');
+
+    const base18 = eid.slice(0, 18);
+    const clientId = eid.slice(18, 22);
+
+    // 原有的18位解析逻辑
+    const [cid_bin, state_bin, ts] = unpack(base18);
+    // 返回四元组，兼容旧调用可只解构前三个
+    return [cid_bin, state_bin, ts, clientId];
+}
+
 const datamodel = {
-	unpack_event_id: unpack,
+	unpack_event_id: unpack_event_id,
 	Command: Command,
 	Event: Event,
 	register_command: register_command,

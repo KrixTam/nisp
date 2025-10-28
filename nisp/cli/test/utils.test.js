@@ -160,3 +160,28 @@ describe('测试copy_json', () => {
 	});
 
 });
+
+
+describe('测试normalize_clientid', () => {
+
+	test('合法4位hex（小写）', () => {
+		expect(utils.normalize_clientid('abcd')).toBe('abcd');
+	});
+
+	test('合法4位hex（大写自动转小写）', () => {
+		expect(utils.normalize_clientid('ABCD')).toBe('abcd');
+	});
+
+	test('非hex输入派生4位hex', () => {
+		const name = 'user123';
+		let sum = 0;
+		for (let i = 0; i < name.length; i++) sum = (sum + name.charCodeAt(i)) & 0xffff;
+		const expected = ('0000' + sum.toString(16)).slice(-4);
+		expect(utils.normalize_clientid(name)).toBe(expected);
+	});
+
+	test('类型非法抛出TypeError', () => {
+		expect(() => utils.normalize_clientid(123)).toThrow(TypeError);
+	});
+
+});

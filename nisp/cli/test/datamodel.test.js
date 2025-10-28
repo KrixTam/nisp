@@ -32,7 +32,9 @@ describe('测试unpack_event_id', () => {
         let command_01 = digit_format(4, constants.COMMAND_ID_BITS);
         let command_01_state = '00';
         let event_id = bin_to_hex(random_code + ts_shadow + position_code + command_01_state + command_01, 2);
-        let [cid_02, state_02, timestamp] = datamodel.unpack_event_id(event_id);
+        let client_id = utils.normalize_clientid('abcd');
+        let [cid_02, state_02, timestamp, client_id_02] = datamodel.unpack_event_id(event_id + client_id);
+        expect(client_id).toBe(client_id_02);
         expect(command_01).toBe(cid_02);
         expect(command_01_state).toBe(state_02);
         expect(timestamp.format('YYYYMMDD HHmmss.SSS')).toBe(ts.format('YYYYMMDD HHmmss.SSS'));
@@ -50,6 +52,31 @@ describe('测试unpack_event_id', () => {
             datamodel.unpack_event_id('8080100e4e14c14000');
         };
         expect(t).toThrow(RangeError);
+    });
+
+    test('时间逆流_22位eid', () => {
+        const client_id = 'abcd';
+        const t = () => {
+            // 18位基础 + 4位client_id，长度22
+            datamodel.unpack_event_id('58ca6e32b444000000' + client_id);
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('random_code校验失败_22位eid', () => {
+        const client_id = 'abcd';
+        const t = () => {
+            // 18位基础 + 4位client_id，长度22
+            datamodel.unpack_event_id('8080100e4e14c14000' + client_id);
+        };
+        expect(t).toThrow(RangeError);
+    });
+
+    test('类型错误（非字符串）', () => {
+        expect(() => datamodel.unpack_event_id(123)).toThrow(TypeError);
+        expect(() => datamodel.unpack_event_id({})).toThrow(TypeError);
+        expect(() => datamodel.unpack_event_id(null)).toThrow(TypeError);
+        expect(() => datamodel.unpack_event_id(undefined)).toThrow(TypeError);
     });
 
 });
@@ -177,9 +204,11 @@ describe('测试Event', () => {
 
     test('正常情况_01', () => {
         let ts = new moment('2021-01-02 12:23:22');
-        let evt = new datamodel.Event(4, 0, ts);
+        let client_id = 'abcd';
+        let evt = new datamodel.Event(client_id, 4, 0, ts);
         let event_id = evt.eid();
-        let [cid_02, state_02, timestamp] = datamodel.unpack_event_id(event_id);
+        let [cid_02, state_02, timestamp, client_id_02] = datamodel.unpack_event_id(event_id);
+        expect(client_id).toBe(client_id_02);
         expect(parseInt(evt.command.cid, 2)).toBe(4);
         expect(evt.command.cid).toBe(cid_02);
         expect(evt.command.state).toBe(parseInt(state_02, 2));
@@ -187,9 +216,11 @@ describe('测试Event', () => {
     });
 
     test('正常情况_02', () => {
-        let evt = new datamodel.Event(4, 0);
+        let client_id = 'abcd';
+        let evt = new datamodel.Event(client_id, 4, 0);
         let event_id = evt.eid();
-        let [cid_02, state_02, timestamp] = datamodel.unpack_event_id(event_id);
+        let [cid_02, state_02, timestamp, client_id_02] = datamodel.unpack_event_id(event_id);
+        expect(client_id).toBe(client_id_02);
         expect(parseInt(evt.command.cid, 2)).toBe(4);
         expect(evt.command.cid).toBe(cid_02);
         expect(evt.command.state).toBe(parseInt(state_02, 2));
@@ -198,35 +229,41 @@ describe('测试Event', () => {
 
     test('error_01', () => {
         const t = () => {
-            new datamodel.Event(4, 0, moment('2019-01-02 12:23:22'));
+            let client_id = 'abcd';
+            new datamodel.Event(client_id, 4, 0, moment('2019-01-02 12:23:22'));
         };
         expect(t).toThrow(RangeError);
     });
 
     test('process_01', () => {
-        let evt = new datamodel.Event(8);
+        let client_id = 'abcd';
+        let evt = new datamodel.Event(client_id, 8);
         let res = JSON.parse(evt.process({'a': 2, 'b': 7}));
         expect(res.data).toBe(9);
         expect(res.eid).toBe(evt.eid());
-        let [cid_02, state_02, timestamp] = datamodel.unpack_event_id(res.eid);
+        let [cid_02, state_02, timestamp, client_id_02] = datamodel.unpack_event_id(res.eid);
+        expect(client_id).toBe(client_id_02);
         expect(evt.command.state).toBe(constants.STATE_INIT);
         expect(evt.command.cid).toBe(cid_02);
         expect(evt.command.state).toBe(parseInt(state_02, 2));
     });
 
     test('process_02', () => {
-        let evt = new datamodel.Event(8, constants.STATE_INIT);
+        let client_id = 'abcd';
+        let evt = new datamodel.Event(client_id, 8, constants.STATE_INIT);
         let res = JSON.parse(evt.process({'a': 2, 'b': 7}));
         expect(res).toBe(null);
         expect(evt.command.state).toBe(constants.STATE_INIT_END);
     });
 
     test('process_03', () => {
-        let evt = new datamodel.Event(8, constants.STATE_INIT_END);
+        let client_id = 'abcd';
+        let evt = new datamodel.Event(client_id, 8, constants.STATE_INIT_END);
         let res = JSON.parse(evt.process({'a': 2, 'b': 7}));
         expect(res.data).toBe(14);
         expect(res.eid).toBe(evt.eid());
-        let [cid_02, state_02, timestamp] = datamodel.unpack_event_id(res.eid);
+        let [cid_02, state_02, timestamp, client_id_02] = datamodel.unpack_event_id(res.eid);
+        expect(client_id).toBe(client_id_02);
         expect(evt.command.state).toBe(constants.STATE_PROCESS_APPLY);
         expect(evt.command.cid).toBe(cid_02);
         expect(evt.command.state).toBe(parseInt(state_02, 2));

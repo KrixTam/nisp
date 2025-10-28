@@ -63,5 +63,9 @@ data.RANDOM_CODE_MAX = (1 << data.RANDOM_CODE_BITS) - 1;
 data.COMMAND_ID_MAX = (1 << data.COMMAND_ID_BITS) - 1;
 data.REQUEST = '{ "' + data.KEY_EVENT_ID + '": "{eid}", "' + data.KEY_ERROR_CODE + '": {ec}, "' + data.KEY_DATA + '": {data} }';
 // data.KEY_DATA = 'data';
+const CLIENT_ID_LEN = 4;      // 新增：client_id长度
+const EVENT_ID_LEN = 22;      // 新增：eid总长度（18+4）
+// 可根据需要暴露校验正则
+const EVENT_ID_PATTERN = /^[a-f0-9]{22}$/;
 
 module.exports = Object.freeze(data);

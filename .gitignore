@@ -3,3 +3,6 @@ __pycache__/
 .coverage
 nisp.socket
 .DS_Store
+node_modules/
+*.log
+coverage/

@@ -88,6 +88,16 @@ NISPLogger.prototype.error = function (messages) {
 const _logger = new NISPLogger(constants.ERROR_DEF);
 
 const utils = {
+	// 新增：clientId规范化工具
+	normalize_clientid: function (clientId) {
+		if (typeof clientId !== 'string') throw new TypeError('clientId must be string');
+		const hex = clientId.toLowerCase();
+		if (/^[a-f0-9]{4}$/.test(hex)) return hex;
+		// 非hex输入时，派生16位hash并取4位hex
+		let sum = 0;
+		for (let i = 0; i < hex.length; i++) sum = (sum + hex.charCodeAt(i)) & 0xffff;
+		return ('0000' + sum.toString(16)).slice(-4);
+	},
 	logger: _logger,
 	separate_bits: function (num, bits_length) {
 		if (typeof(num) == 'number') {
