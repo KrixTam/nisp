@@ -6,3 +6,4 @@ nisp.socket
 node_modules/
 *.log
 coverage/
+package-lock.json
