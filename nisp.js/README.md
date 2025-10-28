@@ -1,4 +1,4 @@
-# NISP CLI (Node.js)
+# NISP (Node.js版本)
 
 NISP 的 Node.js 客户端实现与 Python 侧保持一致的协议约定，包含事件编码（EID）、心跳、命令发送与响应解析。
 
@@ -13,7 +13,7 @@ NISP 的 Node.js 客户端实现与 Python 侧保持一致的协议约定，包�
 ## 安装
 
 - Node.js 版本建议 `>= 14`
-- 包依赖在 `nisp/cli/package.json`
+- 包依赖在 `nisp.js/package.json`
 
 ```bash
 npm install
@@ -109,7 +109,7 @@ setTimeout(() => {
 
 ## 测试
 
-Node 测试位于 `nisp/cli/test`，包含数据模型与客户端行为的单元测试。
+- Node 测试位于 `nisp.js/test`，包含数据模型与客户端行为的单元测试。
 
 ```bash
 npm test

@@ -87,13 +87,13 @@ RANDOM_CODE(6) + TIMESTAMP_SHADOW(48) + POSITION_CODE(4) + COMMAND_STATE(2) + CO
 2. 下发 `{'name': '<hex4>'}`
 3. 客户端后续在心跳或业务报文 `data` 中携带该 `name` 进行校验
 
-## 客户端实现（Node.js 示例）
+## Node.js版本
 
 关键模块：
-- `nisp/cli/core.js`
+- `nisp.js/core.js`
   - `NISPClient(fd_path, heartbeat_interval)`：连接、心跳发送、请求发送与事件监听
   - `generate_event_index(...)`：生成事件索引（命令ID + 时间），用于内部回调管理
-- `nisp/cli/datamodel.js`
+- `nisp.js/datamodel.js`
   - `Event(cid, state?, ts?)`：生成请求内容（含 `eid` 与 `data`）
   - `unpack_event_id(eid)`：解析事件ID，得到 `[cid_bin, state_bin, moment_ts]`
 
@@ -114,9 +114,10 @@ python run_s.py
 python run_c.py
 ```
 
-- Node 客户端（参考 `nisp/cli` 测试）：
+- Node 客户端（参考 `nisp.js` 测试）：
   - 安装依赖：`npm install`（需要 `moment`、`winston`）
   - 使用 `net.createConnection({path: '<socket_path>'})` 连接，并按上文心跳/业务流程构造/解析报文
+  - 测试：`npm test`（包含数据模型与客户端行为的单元测试）
 
 ## 测试与覆盖率
 
