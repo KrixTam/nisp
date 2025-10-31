@@ -1,7 +1,7 @@
 # nisp
 ## 简介
 
-NISP 是一个基于事件的轻量协议，当前实现以 UNIX Domain Socket 为传输层，服务端使用 Twisted（Python）实现，客户端示例提供了 Node.js 版本。协议以“事件（Event）”为核心，所有交互通过事件标识 `eid`（18位十六进制字符串）来串联，同时配合有限状态机管理生命周期。
+NISP 是一个基于事件的轻量协议，当前实现以 UNIX Domain Socket 为传输层，服务端使用 Twisted（Python）实现，客户端示例提供了 Node.js 版本。协议以“事件（Event）”为核心，所有交互通过事件标识 `eid`（22位十六进制字符串）来串联，同时配合有限状态机管理生命周期。
 
 核心特性：
 - 事件驱动 + 有限状态机（INIT → INIT_END → PROCESS_APPLY → PROCESS_END）

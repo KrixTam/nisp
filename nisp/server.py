@@ -120,7 +120,7 @@ class NISPServer:
             'schema': {
                 'type': 'object',
                 'properties': {
-                    'mode': {'type': 'string'},
+                    'socket': {'type': 'string'},
                     'timeout': {
                         'type': 'integer',
                         'minimum': TIMEOUT_MIN,
